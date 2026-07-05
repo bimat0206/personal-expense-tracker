@@ -1,0 +1,19 @@
+{
+  "name": "@expense-tracker/contracts",
+  "version": "1.0.0",
+  "private": true,
+  "main": "generated/client.ts",
+  "types": "generated/types.ts",
+  "scripts": {
+    "validate": "redocly lint openapi.yaml",
+    "generate:types": "openapi-typescript openapi.yaml -o generated/types.ts",
+    "build": "npm run validate && npm run generate:types"
+  },
+  "devDependencies": {
+    "@redocly/cli": "^1.10.0",
+    "openapi-typescript": "^7.0.0"
+  },
+  "dependencies": {
+    "openapi-fetch": "^0.17.0"
+  }
+}

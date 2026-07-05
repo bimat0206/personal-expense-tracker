@@ -1,0 +1,2063 @@
+openapi: 3.0.3
+info:
+  title: Personal Expense Tracker API
+  version: 1.0.0
+  description: Local REST API for the Personal Expense Tracker
+  license:
+    name: MIT
+servers:
+- url: http://localhost:3000
+  description: Local backend
+components:
+  schemas:
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum:
+          - expense
+          - income
+        date:
+          type: string
+          format: date
+        amountCents:
+          type: integer
+        categoryId:
+          type: integer
+          nullable: true
+        incomeSourceId:
+          type: integer
+          nullable: true
+        paymentMethodId:
+          type: integer
+        note:
+          type: string
+          maxLength: 500
+          nullable: true
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tag'
+        attachmentId:
+          type: string
+          nullable: true
+        recurringRuleId:
+          type: integer
+          nullable: true
+        occurrenceDate:
+          type: string
+          format: date
+          nullable: true
+      required:
+      - id
+      - type
+      - date
+      - amountCents
+      - paymentMethodId
+    Category:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        color:
+          type: string
+          nullable: true
+        icon:
+          type: string
+          nullable: true
+        sortOrder:
+          type: integer
+        archived:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - name
+      - sortOrder
+      - archived
+    IncomeSource:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        color:
+          type: string
+          nullable: true
+        icon:
+          type: string
+          nullable: true
+        sortOrder:
+          type: integer
+        archived:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - name
+      - sortOrder
+      - archived
+    PaymentMethod:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        type:
+          type: string
+          nullable: true
+          enum:
+          - cash
+          - credit
+          - debit
+          - bank_transfer
+          - other
+        sortOrder:
+          type: integer
+        archived:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - name
+      - sortOrder
+      - archived
+    Tag:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        color:
+          type: string
+          nullable: true
+        sortOrder:
+          type: integer
+        archived:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - name
+      - sortOrder
+      - archived
+    TopExpenseItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        date:
+          type: string
+          format: date
+        amountCents:
+          type: integer
+        categoryId:
+          type: integer
+        note:
+          type: string
+          nullable: true
+      required:
+      - id
+      - date
+      - amountCents
+      - categoryId
+    WishListItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        month:
+          type: integer
+        year:
+          type: integer
+        name:
+          type: string
+        estimatedCostCents:
+          type: integer
+        categoryId:
+          type: integer
+        priority:
+          type: string
+          enum:
+          - high
+          - medium
+          - low
+        note:
+          type: string
+          maxLength: 500
+          nullable: true
+        status:
+          type: string
+          enum:
+          - planned
+          - purchased
+          - abandoned
+        linkedTransactionId:
+          type: integer
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - month
+      - year
+      - name
+      - estimatedCostCents
+      - categoryId
+      - priority
+      - status
+    RecurringRule:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum:
+          - expense
+          - income
+        amountCents:
+          type: integer
+        categoryId:
+          type: integer
+          nullable: true
+        incomeSourceId:
+          type: integer
+          nullable: true
+        paymentMethodId:
+          type: integer
+        frequency:
+          type: string
+          enum:
+          - weekly
+          - monthly
+          - yearly
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+          nullable: true
+        active:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - type
+      - amountCents
+      - paymentMethodId
+      - frequency
+      - startDate
+      - active
+    AppSettings:
+      type: object
+      properties:
+        currencyCode:
+          type: string
+        topExpensesCount:
+          type: integer
+        backupReminderThresholdDays:
+          type: integer
+      required:
+      - currencyCode
+      - topExpensesCount
+      - backupReminderThresholdDays
+    Attachment:
+      type: object
+      properties:
+        id:
+          type: string
+        filename:
+          type: string
+        mimeType:
+          type: string
+        sizeBytes:
+          type: integer
+        transactionId:
+          type: integer
+      required:
+      - id
+      - filename
+      - mimeType
+      - sizeBytes
+      - transactionId
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+      required:
+      - error
+paths:
+  /api/health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  dbConnected:
+                    type: boolean
+        '503':
+          description: Service Unavailable
+        '400':
+          description: Bad Request
+      operationId: getHealth
+  /api/transactions:
+    get:
+      summary: List transactions
+      parameters:
+      - name: dateFrom
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: dateTo
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: type
+        in: query
+        schema:
+          type: string
+      - name: categoryId
+        in: query
+        schema:
+          type: integer
+      - name: incomeSourceId
+        in: query
+        schema:
+          type: integer
+      - name: paymentMethodId
+        in: query
+        schema:
+          type: integer
+      - name: tagId
+        in: query
+        schema:
+          type: integer
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+      - name: pageSize
+        in: query
+        schema:
+          type: integer
+          default: 50
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Transaction'
+                  total:
+                    type: integer
+                required:
+                - items
+                - total
+        '400':
+          description: Bad Request
+        '428':
+          description: Precondition Required
+      operationId: getTransactions
+    post:
+      summary: Create transaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  enum:
+                  - expense
+                  - income
+                date:
+                  type: string
+                  format: date
+                amountCents:
+                  type: integer
+                categoryId:
+                  type: integer
+                incomeSourceId:
+                  type: integer
+                paymentMethodId:
+                  type: integer
+                note:
+                  type: string
+                tagIds:
+                  type: array
+                  items:
+                    type: integer
+              required:
+              - type
+              - date
+              - amountCents
+              - paymentMethodId
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '428':
+          description: Precondition Required
+      operationId: postTransactions
+  /api/transactions/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    get:
+      summary: Get transaction
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '404':
+          description: Not Found
+        '428':
+          description: Precondition Required
+      operationId: getTransactionsId
+    put:
+      summary: Update transaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  enum:
+                  - expense
+                  - income
+                date:
+                  type: string
+                  format: date
+                amountCents:
+                  type: integer
+                categoryId:
+                  type: integer
+                incomeSourceId:
+                  type: integer
+                paymentMethodId:
+                  type: integer
+                note:
+                  type: string
+                tagIds:
+                  type: array
+                  items:
+                    type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '400':
+          description: Bad Request
+        '404':
+          description: Not Found
+        '428':
+          description: Precondition Required
+      operationId: putTransactionsId
+    delete:
+      summary: Delete transaction
+      responses:
+        '204':
+          description: No Content
+        '404':
+          description: Not Found
+        '428':
+          description: Precondition Required
+      operationId: deleteTransactionsId
+  /api/transactions/{id}/attachment:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    post:
+      summary: Upload attachment
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attachment'
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attachment'
+        '400':
+          description: Bad Request
+        '404':
+          description: Not Found
+        '428':
+          description: Precondition Required
+      operationId: postTransactionsIdAttachment
+    get:
+      summary: Download attachment
+      responses:
+        '200':
+          description: OK
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Not Found
+        '428':
+          description: Precondition Required
+      operationId: getTransactionsIdAttachment
+    delete:
+      summary: Delete attachment
+      responses:
+        '204':
+          description: No Content
+        '404':
+          description: Not Found
+        '428':
+          description: Precondition Required
+      operationId: deleteTransactionsIdAttachment
+  /api/categories:
+    get:
+      summary: List categories
+      parameters:
+      - name: includeArchived
+        in: query
+        schema:
+          type: boolean
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+        '400':
+          description: Bad Request
+        '428':
+          description: Precondition Required
+      operationId: getCategories
+    post:
+      summary: Create categories
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: &id001
+                name:
+                  type: string
+                color:
+                  type: string
+                icon:
+                  type: string
+                sortOrder:
+                  type: integer
+              required:
+              - name
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '409':
+          description: Conflict
+        '428':
+          description: Precondition Required
+      operationId: postCategories
+  /api/categories/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    put:
+      summary: Update categories
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: *id001
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '404':
+          description: Not Found
+        '409':
+          description: Conflict
+        '428':
+          description: Precondition Required
+      operationId: putCategoriesId
+    delete:
+      summary: Hard delete categories
+      responses:
+        '204':
+          description: No Content
+        '404':
+          description: Not Found
+        '409':
+          description: Conflict
+        '428':
+          description: Precondition Required
+      operationId: deleteCategoriesId
+  /api/categories/{id}/archive:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    post:
+      summary: Archive categories
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '404':
+          description: Not Found
+        '428':
+          description: Precondition Required
+      operationId: postCategoriesIdArchive
+  /api/categories/{id}/unarchive:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    post:
+      summary: Unarchive categories
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '404':
+          description: Not Found
+        '428':
+          description: Precondition Required
+      operationId: postCategoriesIdUnarchive
+  /api/income-sources:
+    get:
+      summary: List income-sources
+      parameters:
+      - name: includeArchived
+        in: query
+        schema:
+          type: boolean
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/IncomeSource'
+        '400':
+          description: Bad Request
+        '428':
+          description: Precondition Required
+      operationId: getIncome-sources
+    post:
+      summary: Create income-sources
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: &id002
+                name:
+                  type: string
+                color:
+                  type: string
+                icon:
+                  type: string
+                sortOrder:
+                  type: integer
+              required:
+              - name
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IncomeSource'
+        '409':
+          description: Conflict
+        '428':
+          description: Precondition Required
+      operationId: postIncome-sources
+  /api/income-sources/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    put:
+      summary: Update income-sources
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: *id002
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IncomeSource'
+        '404':
+          description: Not Found
+        '409':
+          description: Conflict
+        '428':
+          description: Precondition Required
+      operationId: putIncome-sourcesId
+    delete:
+      summary: Hard delete income-sources
+      responses:
+        '204':
+          description: No Content
+        '404':
+          description: Not Found
+        '409':
+          description: Conflict
+        '428':
+          description: Precondition Required
+      operationId: deleteIncome-sourcesId
+  /api/income-sources/{id}/archive:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    post:
+      summary: Archive income-sources
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IncomeSource'
+        '404':
+          description: Not Found
+        '428':
+          description: Precondition Required
+      operationId: postIncome-sourcesIdArchive
+  /api/income-sources/{id}/unarchive:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    post:
+      summary: Unarchive income-sources
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IncomeSource'
+        '404':
+          description: Not Found
+        '428':
+          description: Precondition Required
+      operationId: postIncome-sourcesIdUnarchive
+  /api/payment-methods:
+    get:
+      summary: List payment-methods
+      parameters:
+      - name: includeArchived
+        in: query
+        schema:
+          type: boolean
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PaymentMethod'
+        '400':
+          description: Bad Request
+        '428':
+          description: Precondition Required
+      operationId: getPayment-methods
+    post:
+      summary: Create payment-methods
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: &id003
+                name:
+                  type: string
+                type:
+                  type: string
+                sortOrder:
+                  type: integer
+              required:
+              - name
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentMethod'
+        '409':
+          description: Conflict
+        '428':
+          description: Precondition Required
+      operationId: postPayment-methods
+  /api/payment-methods/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    put:
+      summary: Update payment-methods
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: *id003
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentMethod'
+        '404':
+          description: Not Found
+        '409':
+          description: Conflict
+        '428':
+          description: Precondition Required
+      operationId: putPayment-methodsId
+    delete:
+      summary: Hard delete payment-methods
+      responses:
+        '204':
+          description: No Content
+        '404':
+          description: Not Found
+        '409':
+          description: Conflict
+        '428':
+          description: Precondition Required
+      operationId: deletePayment-methodsId
+  /api/payment-methods/{id}/archive:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    post:
+      summary: Archive payment-methods
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentMethod'
+        '404':
+          description: Not Found
+        '428':
+          description: Precondition Required
+      operationId: postPayment-methodsIdArchive
+  /api/payment-methods/{id}/unarchive:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    post:
+      summary: Unarchive payment-methods
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentMethod'
+        '404':
+          description: Not Found
+        '428':
+          description: Precondition Required
+      operationId: postPayment-methodsIdUnarchive
+  /api/tags:
+    get:
+      summary: List tags
+      parameters:
+      - name: includeArchived
+        in: query
+        schema:
+          type: boolean
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Tag'
+        '400':
+          description: Bad Request
+        '428':
+          description: Precondition Required
+      operationId: getTags
+    post:
+      summary: Create tags
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: &id004
+                name:
+                  type: string
+                color:
+                  type: string
+                sortOrder:
+                  type: integer
+              required:
+              - name
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tag'
+        '409':
+          description: Conflict
+        '428':
+          description: Precondition Required
+      operationId: postTags
+  /api/tags/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    put:
+      summary: Update tags
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: *id004
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tag'
+        '404':
+          description: Not Found
+        '409':
+          description: Conflict
+        '428':
+          description: Precondition Required
+      operationId: putTagsId
+    delete:
+      summary: Hard delete tags
+      responses:
+        '204':
+          description: No Content
+        '404':
+          description: Not Found
+        '409':
+          description: Conflict
+        '428':
+          description: Precondition Required
+      operationId: deleteTagsId
+  /api/tags/{id}/archive:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    post:
+      summary: Archive tags
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tag'
+        '404':
+          description: Not Found
+        '428':
+          description: Precondition Required
+      operationId: postTagsIdArchive
+  /api/tags/{id}/unarchive:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    post:
+      summary: Unarchive tags
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tag'
+        '404':
+          description: Not Found
+        '428':
+          description: Precondition Required
+      operationId: postTagsIdUnarchive
+  /api/dashboard/years:
+    get:
+      summary: Available Years
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  years:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        year:
+                          type: integer
+                        hasData:
+                          type: boolean
+                        totals:
+                          type: object
+                          properties:
+                            incomeCents:
+                              type: integer
+                            expenseCents:
+                              type: integer
+                            netCents:
+                              type: integer
+        '400':
+          description: Bad Request
+        '428':
+          description: Precondition Required
+      operationId: getDashboardYears
+  /api/dashboard/annual:
+    get:
+      summary: Annual dashboard
+      parameters:
+      - name: year
+        in: query
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totals:
+                    type: object
+                    properties:
+                      incomeCents:
+                        type: integer
+                      expenseCents:
+                        type: integer
+                      netCents:
+                        type: integer
+                  monthly:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        month:
+                          type: integer
+                        incomeCents:
+                          type: integer
+                        expenseCents:
+                          type: integer
+                        netCents:
+                          type: integer
+                  breakdowns:
+                    type: object
+                    properties:
+                      byCategory:
+                        type: array
+                        items:
+                          type: object
+                      byIncomeSource:
+                        type: array
+                        items:
+                          type: object
+                      byPaymentMethod:
+                        type: array
+                        items:
+                          type: object
+                      byTag:
+                        type: array
+                        items:
+                          type: object
+                  topExpenses:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TopExpenseItem'
+                  isPartialPeriod:
+                    type: boolean
+        '400':
+          description: Bad Request
+        '428':
+          description: Precondition Required
+      operationId: getDashboardAnnual
+  /api/dashboard/annual/compare:
+    get:
+      summary: Year comparison
+      parameters:
+      - name: yearA
+        in: query
+        required: true
+        schema:
+          type: integer
+      - name: yearB
+        in: query
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  yearA:
+                    type: object
+                  yearB:
+                    type: object
+                  delta:
+                    type: object
+                    properties:
+                      incomePct:
+                        type: number
+                        nullable: true
+                      expensePct:
+                        type: number
+                        nullable: true
+                      netPct:
+                        type: number
+                        nullable: true
+        '400':
+          description: Bad Request
+        '428':
+          description: Precondition Required
+      operationId: getDashboardAnnualCompare
+  /api/dashboard/monthly:
+    get:
+      summary: Monthly dashboard
+      parameters:
+      - name: year
+        in: query
+        required: true
+        schema:
+          type: integer
+      - name: month
+        in: query
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totals:
+                    type: object
+                  breakdowns:
+                    type: object
+                  topExpenses:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TopExpenseItem'
+                  isPartialPeriod:
+                    type: boolean
+        '400':
+          description: Bad Request
+        '428':
+          description: Precondition Required
+      operationId: getDashboardMonthly
+  /api/system/today:
+    get:
+      summary: Server today
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  date:
+                    type: string
+                    format: date
+        '400':
+          description: Bad Request
+      operationId: getSystemToday
+  /api/wishlist:
+    get:
+      summary: List wish list items
+      parameters:
+      - name: year
+        in: query
+        required: true
+        schema:
+          type: integer
+      - name: month
+        in: query
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WishListItem'
+                  estimatedTotalCents:
+                    type: integer
+        '400':
+          description: Bad Request
+        '428':
+          description: Precondition Required
+      operationId: getWishlist
+    post:
+      summary: Create wish list item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                month:
+                  type: integer
+                year:
+                  type: integer
+                name:
+                  type: string
+                estimatedCostCents:
+                  type: integer
+                categoryId:
+                  type: integer
+                priority:
+                  type: string
+                  enum:
+                  - high
+                  - medium
+                  - low
+                note:
+                  type: string
+              required:
+              - month
+              - year
+              - name
+              - estimatedCostCents
+              - categoryId
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WishListItem'
+        '400':
+          description: Bad Request
+        '428':
+          description: Precondition Required
+      operationId: postWishlist
+  /api/wishlist/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    put:
+      summary: Update wish list item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                estimatedCostCents:
+                  type: integer
+                categoryId:
+                  type: integer
+                priority:
+                  type: string
+                  enum:
+                  - high
+                  - medium
+                  - low
+                note:
+                  type: string
+                status:
+                  type: string
+                  enum:
+                  - planned
+                  - abandoned
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WishListItem'
+        '400':
+          description: Bad Request
+        '404':
+          description: Not Found
+        '428':
+          description: Precondition Required
+      operationId: putWishlistId
+    delete:
+      summary: Delete wish list item
+      responses:
+        '204':
+          description: No Content
+        '404':
+          description: Not Found
+        '428':
+          description: Precondition Required
+      operationId: deleteWishlistId
+  /api/wishlist/{id}/purchase:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    post:
+      summary: Convert to transaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amountCents:
+                  type: integer
+                date:
+                  type: string
+                  format: date
+                paymentMethodId:
+                  type: integer
+              required:
+              - paymentMethodId
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  wishListItem:
+                    $ref: '#/components/schemas/WishListItem'
+                  transaction:
+                    $ref: '#/components/schemas/Transaction'
+        '400':
+          description: Bad Request
+        '409':
+          description: Conflict
+        '428':
+          description: Precondition Required
+      operationId: postWishlistIdPurchase
+  /api/wishlist/{id}/copy-next-month:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    post:
+      summary: Carry over
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WishListItem'
+        '404':
+          description: Not Found
+        '428':
+          description: Precondition Required
+      operationId: postWishlistIdCopy-next-month
+  /api/search:
+    get:
+      summary: Free-text search
+      parameters:
+      - name: q
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: cursor
+        in: query
+        schema:
+          type: integer
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 100
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Transaction'
+                  nextCursor:
+                    type: integer
+                    nullable: true
+        '400':
+          description: Bad Request
+        '428':
+          description: Precondition Required
+      operationId: getSearch
+  /api/import/csv/preview:
+    post:
+      summary: Upload + preview
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  fileToken:
+                    type: string
+                  headers:
+                    type: array
+                    items:
+                      type: string
+                  sampleRows:
+                    type: array
+                    items:
+                      type: array
+                      items:
+                        type: string
+        '400':
+          description: Bad Request
+        '428':
+          description: Precondition Required
+      operationId: postImportCsvPreview
+  /api/import/csv/commit:
+    post:
+      summary: Start commit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fileToken:
+                  type: string
+                mapping:
+                  type: object
+                  properties:
+                    date:
+                      type: string
+                    note:
+                      type: string
+                    amount:
+                      type: string
+                    type:
+                      type: string
+                    signedAmount:
+                      type: string
+                defaultCategoryId:
+                  type: integer
+                defaultIncomeSourceId:
+                  type: integer
+                defaultPaymentMethodId:
+                  type: integer
+              required:
+              - fileToken
+              - mapping
+              - defaultPaymentMethodId
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobId:
+                    type: string
+        '400':
+          description: Bad Request
+        '410':
+          description: Gone
+        '428':
+          description: Precondition Required
+      operationId: postImportCsvCommit
+  /api/import/csv/commit/{jobId}:
+    parameters:
+    - name: jobId
+      in: path
+      required: true
+      schema:
+        type: string
+    get:
+      summary: Poll commit progress
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - processing
+                    - done
+                  rowsProcessed:
+                    type: integer
+                  totalRows:
+                    type: integer
+                  imported:
+                    type: integer
+                  skipped:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        row:
+                          type: integer
+                        reason:
+                          type: string
+        '404':
+          description: Not Found
+        '428':
+          description: Precondition Required
+      operationId: getImportCsvCommitJobid
+  /api/backup/export:
+    get:
+      summary: Download full JSON backup
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  schemaVersion:
+                    type: integer
+                  categories:
+                    type: array
+                    items:
+                      type: object
+                  incomeSources:
+                    type: array
+                    items:
+                      type: object
+                  paymentMethods:
+                    type: array
+                    items:
+                      type: object
+                  tags:
+                    type: array
+                    items:
+                      type: object
+                  transactions:
+                    type: array
+                    items:
+                      type: object
+                  transactionTags:
+                    type: array
+                    items:
+                      type: object
+                  attachments:
+                    type: array
+                    items:
+                      type: object
+                  wishListItems:
+                    type: array
+                    items:
+                      type: object
+                  recurringRules:
+                    type: array
+                    items:
+                      type: object
+                  appSettings:
+                    type: object
+        '400':
+          description: Bad Request
+        '428':
+          description: Precondition Required
+      operationId: getBackupExport
+  /api/backup/import:
+    post:
+      summary: Full-replace import
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                confirm:
+                  type: boolean
+              required:
+              - file
+              - confirm
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  imported:
+                    type: object
+                    additionalProperties:
+                      type: integer
+        '400':
+          description: Bad Request
+        '428':
+          description: Precondition Required
+      operationId: postBackupImport
+  /api/recurring-rules:
+    get:
+      summary: List recurring rules
+      parameters:
+      - name: includeStopped
+        in: query
+        schema:
+          type: boolean
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RecurringRule'
+        '400':
+          description: Bad Request
+        '428':
+          description: Precondition Required
+      operationId: getRecurring-rules
+    post:
+      summary: Create recurring rule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  enum:
+                  - expense
+                  - income
+                amountCents:
+                  type: integer
+                categoryId:
+                  type: integer
+                incomeSourceId:
+                  type: integer
+                paymentMethodId:
+                  type: integer
+                frequency:
+                  type: string
+                  enum:
+                  - weekly
+                  - monthly
+                  - yearly
+                startDate:
+                  type: string
+                  format: date
+                endDate:
+                  type: string
+                  format: date
+              required:
+              - type
+              - amountCents
+              - paymentMethodId
+              - frequency
+              - startDate
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecurringRule'
+        '400':
+          description: Bad Request
+        '428':
+          description: Precondition Required
+      operationId: postRecurring-rules
+  /api/recurring-rules/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    put:
+      summary: Update recurring rule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  enum:
+                  - expense
+                  - income
+                amountCents:
+                  type: integer
+                categoryId:
+                  type: integer
+                incomeSourceId:
+                  type: integer
+                paymentMethodId:
+                  type: integer
+                frequency:
+                  type: string
+                  enum:
+                  - weekly
+                  - monthly
+                  - yearly
+                startDate:
+                  type: string
+                  format: date
+                endDate:
+                  type: string
+                  format: date
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecurringRule'
+        '400':
+          description: Bad Request
+        '404':
+          description: Not Found
+        '428':
+          description: Precondition Required
+      operationId: putRecurring-rulesId
+  /api/recurring-rules/{id}/stop:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    post:
+      summary: Stop recurring rule
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecurringRule'
+        '404':
+          description: Not Found
+        '428':
+          description: Precondition Required
+      operationId: postRecurring-rulesIdStop
+  /api/recurring-rules/{id}/resume:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    post:
+      summary: Resume recurring rule
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecurringRule'
+        '404':
+          description: Not Found
+        '428':
+          description: Precondition Required
+      operationId: postRecurring-rulesIdResume
+  /api/recurring-rules/generate:
+    post:
+      summary: On-demand generation check
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  generated:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Transaction'
+        '400':
+          description: Bad Request
+        '428':
+          description: Precondition Required
+      operationId: postRecurring-rulesGenerate
+  /api/settings:
+    get:
+      summary: Get current settings
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/AppSettings'
+                - type: object
+                  properties:
+                    backupReminderDue:
+                      type: boolean
+                  required:
+                  - backupReminderDue
+        '400':
+          description: Bad Request
+      operationId: getSettings
+    put:
+      summary: Update settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                currencyCode:
+                  type: string
+                topExpensesCount:
+                  type: integer
+                backupReminderThresholdDays:
+                  type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppSettings'
+        '400':
+          description: Bad Request
+      operationId: putSettings
+  /api/settings/first-run:
+    post:
+      summary: Complete first-run setup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                currencyCode:
+                  type: string
+              required:
+              - currencyCode
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppSettings'
+        '409':
+          description: Conflict
+      operationId: postSettingsFirst-run
+security: []
