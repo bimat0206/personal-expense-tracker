@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, ListOrdered, Heart, Search, Settings, Moon, Sun } from 'lucide-react';
+import { LayoutDashboard, ListOrdered, Heart, Search, Settings, Moon, Sun, WalletCards } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { currentYear, currentMonth } from '../../utils/date';
 
@@ -11,9 +11,14 @@ export function Nav() {
   return (
     <nav className="sidebar glass-panel">
       <div className="brand">
-        <h1>ExpenseTracker</h1>
+        <div className="brand-mark" aria-hidden="true"><WalletCards size={19} /></div>
+        <div className="brand-copy">
+          <h1>Expense Tracker</h1>
+          <p>Local finance workspace</p>
+        </div>
       </div>
 
+      <p className="nav-section-label">Workspace</p>
       <div className="nav-links">
         <NavLink to="/" end className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
           <LayoutDashboard size={20} />

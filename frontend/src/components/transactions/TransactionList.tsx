@@ -116,7 +116,7 @@ export function TransactionList({ items, onEdit, onDelete, ...names }: Transacti
             <span className="tx-subtotal-count">
               {incomes.length} {incomes.length === 1 ? 'income' : 'incomes'}
             </span>
-            <span className="tx-subtotal-amount" style={{ color: 'var(--accent-success)' }}>
+            <span className="tx-subtotal-amount tone-income">
               Total: {format(totalIncomeAmount)}
             </span>
           </div>
@@ -125,4 +125,7 @@ export function TransactionList({ items, onEdit, onDelete, ...names }: Transacti
       )}
     </div>
   );
+}
+}
+);
 }

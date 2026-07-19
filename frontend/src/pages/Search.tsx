@@ -13,8 +13,12 @@ export function Search() {
 
   return (
     <div className="page-stack">
-      <div className="page-header">
-        <h2>Search</h2>
+      <div className="workspace-header">
+        <div>
+          <p className="eyebrow">Find anything</p>
+          <h2>Search</h2>
+          <p className="text-muted">Search notes, tags, categories, income sources, and payment methods across your full history.</p>
+        </div>
       </div>
 
       <div className="glass-panel search-bar">
