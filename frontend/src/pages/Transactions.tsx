@@ -16,7 +16,7 @@ import { BreakdownTable } from '../components/dashboard/BreakdownTable';
 import { TopExpenses } from '../components/dashboard/TopExpenses';
 import { TransactionForm } from './TransactionForm';
 import { currentYear, currentMonth } from '../utils/date';
-import { centsToDisplay } from '../utils/currency';
+import { useCurrencyFormatter } from '../hooks/useCurrencyFormatter';
 import type { components } from '../../../contracts/generated/types';
 
 type Transaction = components['schemas']['Transaction'];
@@ -32,9 +32,10 @@ export function Transactions() {
   const [deleteTarget, setDeleteTarget] = useState<Transaction | null>(null);
 
   const { items, total, loading, error, refetch } = useTransactions({ year, month, ...filters });
-  const { data: monthData, loading: monthLoading, error: monthError } = useMonthlyDashboard(year, month);
+  const { data: monthData, loading: monthLoading, error: monthError, refetch: refetchMonth } = useMonthlyDashboard(year, month);
   const { estimatedTotalCents } = useWishList(year, month);
   const { nameFor } = useTaxonomyLookup();
+  const { format } = useCurrencyFormatter();
 
   function goTo(y: number, m: number) {
     navigate(`/transactions/${y}/${m}`);
@@ -44,7 +45,7 @@ export function Transactions() {
     if (!deleteTarget) return;
     await deleteTransaction(deleteTarget.id);
     setDeleteTarget(null);
-    refetch();
+    await Promise.all([refetch(), refetchMonth()]);
   }
 
   return (
@@ -76,7 +77,7 @@ export function Transactions() {
             <div className="summary-tile planned-tile">
               <div className="summary-tile-icon"><CalendarDays size={18} /></div>
               <h4>Planned Wish List</h4>
-              <p className="totals-value">{centsToDisplay(estimatedTotalCents)}</p>
+              <p className="totals-value">{format(estimatedTotalCents)}</p>
             </div>
           </section>
 
@@ -130,6 +131,7 @@ export function Transactions() {
           onSaved={() => {
             setEditing(null);
             refetch();
+            refetchMonth();
           }}
         />
       )}

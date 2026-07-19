@@ -2,9 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [1.0.0] - 2026-07-05
 
 ### Added
+- Multi-currency support across the application with settings to configure USD, EUR, and VND dynamically. Formatting natively adapts to zero-decimal currencies.
 - Single-page dashboard for finance overview with side-by-side grouped monthly charts and net savings bars.
 - `TransactionList` component unified to display both Expense and Income sections on a single screen without tabs.
 - `BreakdownTable` and `TopExpenses` components with collapsible views and tooltip support for long descriptions.

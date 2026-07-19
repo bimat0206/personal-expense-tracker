@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
-import { centsToDisplay } from '../../utils/currency';
+import { useCurrencyFormatter } from '../../hooks/useCurrencyFormatter';
 import { formatDateDisplay } from '../../utils/date';
 
 interface TopExpenseItem {
@@ -19,6 +19,7 @@ interface TopExpensesProps {
 }
 
 export function TopExpenses({ items, nameForCategory, initialVisible = 5 }: TopExpensesProps) {
+  const { format } = useCurrencyFormatter();
   const [expanded, setExpanded] = useState(false);
   const visible = expanded ? items : items.slice(0, initialVisible);
   const hasMore = items.length > initialVisible;
@@ -44,7 +45,7 @@ export function TopExpenses({ items, nameForCategory, initialVisible = 5 }: TopE
               {formatDateDisplay(item.date)} · {nameForCategory(item.categoryId)}
             </div>
           </div>
-          <span className="top-expense-amount">{centsToDisplay(item.amountCents)}</span>
+          <span className="top-expense-amount">{format(item.amountCents)}</span>
         </div>
       ))}
       {hasMore && (

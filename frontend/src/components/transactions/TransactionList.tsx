@@ -1,7 +1,8 @@
 import type { components } from '../../../../contracts/generated/types';
 import { TransactionRow } from './TransactionRow';
 import { EmptyState } from '../shared/EmptyState';
-import { Receipt, TrendingDown, TrendingUp } from 'lucide-react';
+import { Receipt } from 'lucide-react';
+import { useCurrencyFormatter } from '../../hooks/useCurrencyFormatter';
 
 type Transaction = components['schemas']['Transaction'];
 
@@ -14,16 +15,13 @@ interface TransactionListProps {
   onDelete?: (t: Transaction) => void;
 }
 
-function formatAmount(cents: number): string {
-  return (cents / 100).toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-}
-
 export function TransactionList({ items, onEdit, onDelete, ...names }: TransactionListProps) {
+  const { format } = useCurrencyFormatter();
   const expenses = items.filter((t) => t.type === 'expense');
   const incomes = items.filter((t) => t.type === 'income');
+  const hasExpenses = expenses.length > 0;
+  const hasIncomes = incomes.length > 0;
+  const ledgerGridClass = `ledger-grid ${hasExpenses && hasIncomes ? 'split' : 'single'}`;
 
   const totalExpenseAmount = expenses.reduce((sum, t) => sum + t.amountCents, 0);
   const totalIncomeAmount = incomes.reduce((sum, t) => sum + t.amountCents, 0);
@@ -39,104 +37,92 @@ export function TransactionList({ items, onEdit, onDelete, ...names }: Transacti
   }
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '2rem', alignItems: 'start' }}>
+    <div className={ledgerGridClass}>
       {/* Expenses Section */}
+      {hasExpenses && (
       <section>
         <div className="section-heading" style={{ marginBottom: '1rem' }}>
           <h4>Expenses <span className="tx-tab-badge" style={{ marginLeft: '0.5rem' }}>{expenses.length}</span></h4>
         </div>
-        {expenses.length === 0 ? (
-          <EmptyState
-            icon={<TrendingDown size={32} />}
-            title="No expenses this month"
-            description="Add a new expense entry."
-          />
-        ) : (
-          <div className="glass-panel transaction-table-wrap">
-            <table className="transaction-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Description</th>
-                  <th>Category</th>
-                  <th className="align-right">Amount</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {expenses.map((t) => (
-                  <TransactionRow
-                    key={t.id}
-                    transaction={t}
-                    nameForCategory={names.nameForCategory}
-                    nameForIncomeSource={names.nameForIncomeSource}
-                    nameForPaymentMethod={names.nameForPaymentMethod}
-                    onEdit={onEdit ? () => onEdit(t) : undefined}
-                    onDelete={onDelete ? () => onDelete(t) : undefined}
-                  />
-                ))}
-              </tbody>
-            </table>
-            <div className="tx-subtotal">
-              <span className="tx-subtotal-count">
-                {expenses.length} {expenses.length === 1 ? 'expense' : 'expenses'}
-              </span>
-              <span className="tx-subtotal-amount" style={{ color: 'var(--accent-danger)' }}>
-                Total: {formatAmount(totalExpenseAmount)}
-              </span>
-            </div>
+        <div className="glass-panel transaction-table-wrap">
+          <table className="transaction-table">
+            <thead>
+              <tr>
+                <th className="tx-date-col">Date</th>
+                <th>Description</th>
+                <th className="tx-category-col">Category</th>
+                <th className="tx-amount-col align-right">Amount</th>
+                <th className="tx-actions-col">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {expenses.map((t) => (
+                <TransactionRow
+                  key={t.id}
+                  transaction={t}
+                  nameForCategory={names.nameForCategory}
+                  nameForIncomeSource={names.nameForIncomeSource}
+                  nameForPaymentMethod={names.nameForPaymentMethod}
+                  onEdit={onEdit ? () => onEdit(t) : undefined}
+                  onDelete={onDelete ? () => onDelete(t) : undefined}
+                />
+              ))}
+            </tbody>
+          </table>
+          <div className="tx-subtotal">
+            <span className="tx-subtotal-count">
+              {expenses.length} {expenses.length === 1 ? 'expense' : 'expenses'}
+            </span>
+            <span className="tx-subtotal-amount" style={{ color: 'var(--accent-danger)' }}>
+              Total: {format(totalExpenseAmount)}
+            </span>
           </div>
-        )}
+        </div>
       </section>
+      )}
 
       {/* Income Section */}
+      {hasIncomes && (
       <section>
         <div className="section-heading" style={{ marginBottom: '1rem' }}>
           <h4>Income <span className="tx-tab-badge" style={{ marginLeft: '0.5rem' }}>{incomes.length}</span></h4>
         </div>
-        {incomes.length === 0 ? (
-          <EmptyState
-            icon={<TrendingUp size={32} />}
-            title="No income this month"
-            description="Add a new income entry."
-          />
-        ) : (
-          <div className="glass-panel transaction-table-wrap">
-            <table className="transaction-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Description</th>
-                  <th>Source</th>
-                  <th className="align-right">Amount</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {incomes.map((t) => (
-                  <TransactionRow
-                    key={t.id}
-                    transaction={t}
-                    nameForCategory={names.nameForCategory}
-                    nameForIncomeSource={names.nameForIncomeSource}
-                    nameForPaymentMethod={names.nameForPaymentMethod}
-                    onEdit={onEdit ? () => onEdit(t) : undefined}
-                    onDelete={onDelete ? () => onDelete(t) : undefined}
-                  />
-                ))}
-              </tbody>
-            </table>
-            <div className="tx-subtotal">
-              <span className="tx-subtotal-count">
-                {incomes.length} {incomes.length === 1 ? 'income' : 'incomes'}
-              </span>
-              <span className="tx-subtotal-amount" style={{ color: 'var(--accent-success)' }}>
-                Total: {formatAmount(totalIncomeAmount)}
-              </span>
-            </div>
+        <div className="glass-panel transaction-table-wrap">
+          <table className="transaction-table">
+            <thead>
+              <tr>
+                <th className="tx-date-col">Date</th>
+                <th>Description</th>
+                <th className="tx-category-col">Source</th>
+                <th className="tx-amount-col align-right">Amount</th>
+                <th className="tx-actions-col">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {incomes.map((t) => (
+                <TransactionRow
+                  key={t.id}
+                  transaction={t}
+                  nameForCategory={names.nameForCategory}
+                  nameForIncomeSource={names.nameForIncomeSource}
+                  nameForPaymentMethod={names.nameForPaymentMethod}
+                  onEdit={onEdit ? () => onEdit(t) : undefined}
+                  onDelete={onDelete ? () => onDelete(t) : undefined}
+                />
+              ))}
+            </tbody>
+          </table>
+          <div className="tx-subtotal">
+            <span className="tx-subtotal-count">
+              {incomes.length} {incomes.length === 1 ? 'income' : 'incomes'}
+            </span>
+            <span className="tx-subtotal-amount" style={{ color: 'var(--accent-success)' }}>
+              Total: {format(totalIncomeAmount)}
+            </span>
           </div>
-        )}
+        </div>
       </section>
+      )}
     </div>
   );
 }

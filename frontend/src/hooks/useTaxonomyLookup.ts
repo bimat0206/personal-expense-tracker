@@ -26,8 +26,22 @@ export function useTaxonomyLookup() {
     };
   }, [categories.items, incomeSources.items, paymentMethods.items, tags.items]);
 
+  const colorFor = useMemo(() => {
+    const maps = {
+      category: new Map(categories.items.map((i) => [i.id, i.color])),
+      incomeSource: new Map(incomeSources.items.map((i) => [i.id, i.color])),
+      tag: new Map(tags.items.map((i) => [i.id, i.color])),
+    };
+    return {
+      category: (id: number) => maps.category.get(id) || null,
+      incomeSource: (id: number) => maps.incomeSource.get(id) || null,
+      tag: (id: number) => maps.tag.get(id) || null,
+    };
+  }, [categories.items, incomeSources.items, tags.items]);
+
   return {
     nameFor,
+    colorFor,
     categories: categories.items.filter((c) => !c.archived),
     incomeSources: incomeSources.items.filter((c) => !c.archived),
     paymentMethods: paymentMethods.items.filter((c) => !c.archived),

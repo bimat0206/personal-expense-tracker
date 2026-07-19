@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
-import { centsToDisplay } from '../../utils/currency';
+import { useCurrencyFormatter } from '../../hooks/useCurrencyFormatter';
 
 interface BreakdownItem {
   id: number;
@@ -17,6 +17,7 @@ interface BreakdownTableProps {
 }
 
 export function BreakdownTable({ title, items, nameFor, emptyLabel = 'No data yet', initialVisible = 5 }: BreakdownTableProps) {
+  const { format } = useCurrencyFormatter();
   const [expanded, setExpanded] = useState(false);
   const sorted = [...items].sort((a, b) => b.amountCents - a.amountCents);
   const max = sorted[0]?.amountCents ?? 0;
@@ -29,7 +30,7 @@ export function BreakdownTable({ title, items, nameFor, emptyLabel = 'No data ye
       <div className="breakdown-header">
         <h4>{title}</h4>
         {sorted.length > 0 && (
-          <span className="breakdown-total">{centsToDisplay(total)}</span>
+          <span className="breakdown-total">{format(total)}</span>
         )}
       </div>
       {sorted.length === 0 && <p className="text-muted">{emptyLabel}</p>}
@@ -43,7 +44,7 @@ export function BreakdownTable({ title, items, nameFor, emptyLabel = 'No data ye
               <div className="breakdown-bar-track">
                 <div className="breakdown-bar-fill" style={{ width: `${pct}%` }} />
               </div>
-              <span className="breakdown-amount">{centsToDisplay(item.amountCents)}</span>
+              <span className="breakdown-amount">{format(item.amountCents)}</span>
             </div>
           );
         })}

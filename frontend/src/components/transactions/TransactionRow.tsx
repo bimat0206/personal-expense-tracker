@@ -1,6 +1,6 @@
 import { Paperclip, Pencil, Trash2 } from 'lucide-react';
 import type { components } from '../../../../contracts/generated/types';
-import { signedCentsToDisplay } from '../../utils/currency';
+import { useCurrencyFormatter } from '../../hooks/useCurrencyFormatter';
 import { formatDateDisplay } from '../../utils/date';
 
 type Transaction = components['schemas']['Transaction'];
@@ -22,12 +22,13 @@ export function TransactionRow({
   onEdit,
   onDelete,
 }: TransactionRowProps) {
+  const { formatSigned } = useCurrencyFormatter();
   const categoryLabel = t.type === 'expense' ? nameForCategory(t.categoryId!) : nameForIncomeSource(t.incomeSourceId!);
 
   return (
     <tr className="transaction-row">
-      <td>{formatDateDisplay(t.date)}</td>
-      <td>
+      <td data-label="Date">{formatDateDisplay(t.date)}</td>
+      <td data-label="Description">
         <div className="transaction-note">{t.note || '—'}</div>
         <div className="text-muted transaction-meta">
           {nameForPaymentMethod(t.paymentMethodId)}
@@ -43,11 +44,11 @@ export function TransactionRow({
           </div>
         )}
       </td>
-      <td>
+      <td data-label={t.type === 'expense' ? 'Category' : 'Source'}>
         <span className={`badge badge-${t.type}`}>{categoryLabel}</span>
       </td>
-      <td className={`transaction-amount tone-${t.type}`}>{signedCentsToDisplay(t.amountCents, t.type)}</td>
-      <td className="transaction-actions">
+      <td data-label="Amount" className={`transaction-amount tone-${t.type}`}>{formatSigned(t.amountCents, t.type)}</td>
+      <td data-label="Actions" className="transaction-actions">
         {onEdit && (
           <button type="button" className="icon-btn" aria-label="Edit" onClick={onEdit}>
             <Pencil size={16} />

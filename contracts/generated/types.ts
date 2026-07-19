@@ -2339,10 +2339,28 @@ export interface operations {
                             netCents?: number;
                         };
                         monthly?: {
-                            month?: number;
-                            incomeCents?: number;
-                            expenseCents?: number;
-                            netCents?: number;
+                            month: number;
+                            incomeCents: number;
+                            expenseCents: number;
+                            netCents: number;
+                            breakdowns: {
+                                byCategory: {
+                                    id?: number;
+                                    amountCents?: number;
+                                }[];
+                                byIncomeSource: {
+                                    id: number;
+                                    amountCents: number;
+                                }[];
+                                byPaymentMethod: {
+                                    id?: number;
+                                    amountCents?: number;
+                                }[];
+                                byTag: {
+                                    id?: number;
+                                    amountCents?: number;
+                                }[];
+                            };
                         }[];
                         breakdowns?: {
                             byCategory?: Record<string, never>[];

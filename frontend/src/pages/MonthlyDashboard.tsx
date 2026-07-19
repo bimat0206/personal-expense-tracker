@@ -8,7 +8,7 @@ import { BreakdownTable } from '../components/dashboard/BreakdownTable';
 import { TopExpenses } from '../components/dashboard/TopExpenses';
 import { LoadingSpinner } from '../components/shared/LoadingSpinner';
 import { EmptyState } from '../components/shared/EmptyState';
-import { centsToDisplay } from '../utils/currency';
+import { useCurrencyFormatter } from '../hooks/useCurrencyFormatter';
 import { currentYear, currentMonth } from '../utils/date';
 
 export function MonthlyDashboard() {
@@ -20,6 +20,7 @@ export function MonthlyDashboard() {
   const { data, loading, error } = useMonthlyDashboard(year, month);
   const { estimatedTotalCents } = useWishList(year, month);
   const { nameFor } = useTaxonomyLookup();
+  const { format } = useCurrencyFormatter();
 
   function goTo(y: number, m: number) {
     navigate(`/monthly/${y}/${m}`);
@@ -48,7 +49,7 @@ export function MonthlyDashboard() {
           {estimatedTotalCents > 0 && (
             <div className="glass-panel wishlist-callout">
               <span>Planned purchases this month (Wish List reference, not included above):</span>
-              <strong>{centsToDisplay(estimatedTotalCents)}</strong>
+              <strong>{format(estimatedTotalCents)}</strong>
             </div>
           )}
 

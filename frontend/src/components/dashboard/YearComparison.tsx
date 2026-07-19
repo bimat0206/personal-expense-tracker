@@ -1,4 +1,4 @@
-import { centsToDisplay } from '../../utils/currency';
+import { useCurrencyFormatter } from '../../hooks/useCurrencyFormatter';
 import { formatPercentChange, percentChangeTone } from '../../utils/percentage';
 
 interface YearData {
@@ -13,30 +13,32 @@ interface YearComparisonProps {
   delta: { incomePct: number | null; expensePct: number | null; netPct: number | null };
 }
 
-function Row({
-  label,
-  a,
-  b,
-  pct,
-  higherIsBetter,
-}: {
-  label: string;
-  a: number;
-  b: number;
-  pct: number | null;
-  higherIsBetter: boolean;
-}) {
-  return (
-    <div className="comparison-row">
-      <span className="comparison-label">{label}</span>
-      <span>{centsToDisplay(a)}</span>
-      <span>{centsToDisplay(b)}</span>
-      <span className={`pct-change tone-${percentChangeTone(pct, higherIsBetter)}`}>{formatPercentChange(pct)}</span>
-    </div>
-  );
-}
-
 export function YearComparison({ yearA, yearB, dataA, dataB, delta }: YearComparisonProps) {
+  const { format } = useCurrencyFormatter();
+
+  function Row({
+    label,
+    a,
+    b,
+    pct,
+    higherIsBetter,
+  }: {
+    label: string;
+    a: number;
+    b: number;
+    pct: number | null;
+    higherIsBetter: boolean;
+  }) {
+    return (
+      <div className="comparison-row">
+        <span className="comparison-label">{label}</span>
+        <span>{format(a)}</span>
+        <span>{format(b)}</span>
+        <span className={`pct-change tone-${percentChangeTone(pct, higherIsBetter)}`}>{formatPercentChange(pct)}</span>
+      </div>
+    );
+  }
+
   return (
     <div className="glass-panel comparison-table">
       <div className="comparison-row comparison-header">

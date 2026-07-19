@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { CheckCircle2, XCircle, RotateCcw, CalendarPlus, Trash2 } from 'lucide-react';
 import type { components } from '../../../../contracts/generated/types';
-import { centsToDisplay } from '../../utils/currency';
+import { useCurrencyFormatter } from '../../hooks/useCurrencyFormatter';
 import { PurchaseModal } from './PurchaseModal';
 
 type WishListItemType = components['schemas']['WishListItem'];
@@ -25,6 +25,7 @@ export function WishListItem({
   onCopyToNextMonth,
   onDelete,
 }: WishListItemProps) {
+  const { format } = useCurrencyFormatter();
   const [purchasing, setPurchasing] = useState(false);
 
   return (
@@ -37,7 +38,7 @@ export function WishListItem({
         </p>
         {item.note && <p className="text-muted">{item.note}</p>}
       </div>
-      <div className="wishlist-card-amount">{centsToDisplay(item.estimatedCostCents)}</div>
+      <div className="wishlist-card-amount">{format(item.estimatedCostCents)}</div>
       <div className="wishlist-card-actions">
         {item.status === 'planned' && (
           <>

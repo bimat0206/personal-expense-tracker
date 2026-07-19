@@ -8,7 +8,7 @@ import { AmountInput } from '../components/shared/AmountInput';
 import { DatePicker } from '../components/shared/DatePicker';
 import { TagPicker } from '../components/shared/TagPicker';
 import { AttachmentUpload } from '../components/shared/AttachmentUpload';
-import { decimalToCents, centsToDecimalString } from '../utils/currency';
+import { useCurrencyFormatter } from '../hooks/useCurrencyFormatter';
 import { todayIso } from '../utils/date';
 
 type Transaction = components['schemas']['Transaction'];
@@ -22,9 +22,10 @@ interface TransactionFormProps {
 
 export function TransactionForm({ transaction, defaultDate, onClose, onSaved }: TransactionFormProps) {
   const { categories, incomeSources, paymentMethods, tags } = useTaxonomyLookup();
+  const { parseInput, toDecimalString, loading: currencyLoading } = useCurrencyFormatter();
   const [type, setType] = useState<'expense' | 'income'>(transaction?.type ?? 'expense');
   const [date, setDate] = useState(transaction?.date ?? defaultDate ?? todayIso());
-  const [amount, setAmount] = useState(transaction ? centsToDecimalString(transaction.amountCents) : '');
+  const [amountValue, setAmountValue] = useState('');
   const [categoryId, setCategoryId] = useState(transaction?.categoryId ?? categories[0]?.id);
   const [incomeSourceId, setIncomeSourceId] = useState(transaction?.incomeSourceId ?? incomeSources[0]?.id);
   const [paymentMethodId, setPaymentMethodId] = useState(transaction?.paymentMethodId ?? paymentMethods[0]?.id);
@@ -48,11 +49,15 @@ export function TransactionForm({ transaction, defaultDate, onClose, onSaved }: 
     if (transaction) return;
     setPaymentMethodId((current) => current ?? paymentMethods[0]?.id);
   }, [paymentMethods, transaction]);
+  useEffect(() => {
+    if (!transaction || currencyLoading) return;
+    setAmountValue(toDecimalString(transaction.amountCents));
+  }, [currencyLoading, toDecimalString, transaction]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
-    const amountCents = decimalToCents(amount);
+    const amountCents = parseInput(amountValue);
     if (!amountCents) {
       setError('Enter a valid amount greater than zero.');
       return;
@@ -117,7 +122,7 @@ export function TransactionForm({ transaction, defaultDate, onClose, onSaved }: 
           <div className="form-row">
             <label>
               Amount
-              <AmountInput value={amount} onChange={setAmount} />
+              <AmountInput value={amountValue} onChange={setAmountValue} placeholder="Amount" />
             </label>
             <label>
               Date

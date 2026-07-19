@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { useAnnualDashboard, useAvailableYears, useYearComparison } from '../hooks/useDashboard';
+import { useAnnualDashboard, useAvailableYears, useMonthlyBreakdownsForYear, useYearComparison } from '../hooks/useDashboard';
 import { useTaxonomyLookup } from '../hooks/useTaxonomyLookup';
 import { TotalsCard } from '../components/dashboard/TotalsCard';
 import { MonthlyChart } from '../components/dashboard/MonthlyChart';
+import { MonthlyBreakdownCharts } from '../components/dashboard/MonthlyBreakdownCharts';
 import { YearPicker } from '../components/dashboard/YearPicker';
 import { MultiYearTrend } from '../components/dashboard/MultiYearTrend';
 import { YearComparison } from '../components/dashboard/YearComparison';
@@ -17,8 +18,18 @@ export function AnnualDashboard() {
   const [compareYear, setCompareYear] = useState<number | null>(null);
   const { data: years, loading: yearsLoading } = useAvailableYears();
   const { data, loading, error } = useAnnualDashboard(year);
+  const { data: monthlyBreakdowns } = useMonthlyBreakdownsForYear(year);
   const { data: comparison } = useYearComparison(compareYear ?? year - 1, year);
   const { nameFor } = useTaxonomyLookup();
+  const monthlyForBreakdownCharts = data?.monthly.map((month) => ({
+    ...month,
+    breakdowns: month.breakdowns ?? monthlyBreakdowns?.find((m) => m.month === month.month)?.breakdowns ?? {
+      byCategory: [],
+      byIncomeSource: [],
+      byPaymentMethod: [],
+      byTag: [],
+    },
+  })) ?? [];
 
   if (yearsLoading) return <LoadingSpinner label="Loading dashboard…" />;
 
@@ -63,6 +74,8 @@ export function AnnualDashboard() {
             <BreakdownTable title="By Payment Method" items={data.breakdowns.byPaymentMethod} nameFor={nameFor.paymentMethod} />
             <BreakdownTable title="By Tag" items={data.breakdowns.byTag} nameFor={nameFor.tag} />
           </div>
+
+          <MonthlyBreakdownCharts monthly={monthlyForBreakdownCharts} />
 
           <TopExpenses items={data.topExpenses} nameForCategory={nameFor.category} />
 

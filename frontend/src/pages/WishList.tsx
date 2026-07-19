@@ -9,7 +9,7 @@ import { WishListItem } from '../components/wishlist/WishListItem';
 import { AmountInput } from '../components/shared/AmountInput';
 import { LoadingSpinner } from '../components/shared/LoadingSpinner';
 import { EmptyState } from '../components/shared/EmptyState';
-import { centsToDisplay, decimalToCents } from '../utils/currency';
+import { useCurrencyFormatter } from '../hooks/useCurrencyFormatter';
 import { currentYear, currentMonth } from '../utils/date';
 
 export function WishList() {
@@ -18,13 +18,14 @@ export function WishList() {
   const year = Number(params.year) || currentYear();
   const month = Number(params.month) || currentMonth();
 
-  const { items, estimatedTotalCents, loading, error, create, updateItem, remove, purchase, copyToNextMonth } =
+  const { items, estimatedTotalCents, loading: itemsLoading, error, create, updateItem, remove, purchase, copyToNextMonth } =
     useWishList(year, month);
   const { categories, nameFor } = useTaxonomyLookup();
+  const { format, parseInput } = useCurrencyFormatter();
 
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState('');
-  const [cost, setCost] = useState('');
+  const [amountValue, setAmountValue] = useState('');
   const [categoryId, setCategoryId] = useState<number | undefined>(categories[0]?.id);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -39,15 +40,15 @@ export function WishList() {
 
   async function handleAdd(e: FormEvent) {
     e.preventDefault();
-    const estimatedCostCents = decimalToCents(cost);
-    if (!name.trim() || !estimatedCostCents || !categoryId) {
+    const cents = parseInput(amountValue);
+    if (!name.trim() || !cents || !categoryId) {
       setFormError('Fill in a name, a valid cost, and a category.');
       return;
     }
     setFormError(null);
-    await create({ name, estimatedCostCents, categoryId });
+    await create({ name, estimatedCostCents: cents, categoryId });
     setName('');
-    setCost('');
+    setAmountValue('');
     setShowForm(false);
   }
 
@@ -62,13 +63,13 @@ export function WishList() {
 
       <div className="page-header">
         <MonthYearSwitcher year={year} month={month} onChange={goTo} />
-        <span className="text-muted">Planned this month: {centsToDisplay(estimatedTotalCents)}</span>
+        <span className="text-muted">Planned this month: {format(estimatedTotalCents)}</span>
       </div>
 
       {showForm && (
         <form onSubmit={handleAdd} className="glass-panel form-inline">
           <input className="input" placeholder="What do you want to buy?" value={name} onChange={(e) => setName(e.target.value)} />
-          <AmountInput value={cost} onChange={setCost} placeholder="Estimated cost" />
+          <AmountInput value={amountValue} onChange={setAmountValue} placeholder="Estimated cost" />
           <select className="input" value={categoryId ?? ''} onChange={(e) => setCategoryId(Number(e.target.value))}>
             <option value="" disabled>Category</option>
             {categories.map((c) => (
@@ -80,10 +81,10 @@ export function WishList() {
         </form>
       )}
 
-      {loading && <LoadingSpinner />}
-      {error && !loading && <EmptyState title="Couldn't load your wish list" description={error} />}
+      {itemsLoading && <LoadingSpinner />}
+      {error && !itemsLoading && <EmptyState title="Couldn't load your wish list" description={error} />}
 
-      {!loading && !error && items.length === 0 && (
+      {!itemsLoading && !error && items.length === 0 && (
         <EmptyState
           icon={<Heart size={32} />}
           title="Nothing planned for this month"

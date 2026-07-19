@@ -1,5 +1,6 @@
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { monthName } from '../../utils/date';
+import { useCurrencyFormatter } from '../../hooks/useCurrencyFormatter';
 
 interface MonthlyPoint {
   month: number;
@@ -8,10 +9,12 @@ interface MonthlyPoint {
 }
 
 export function MonthlyChart({ monthly }: { monthly: MonthlyPoint[] }) {
+  const { config, format, formatCompactAmount } = useCurrencyFormatter();
+  
   const data = monthly.map((m) => ({
     name: monthName(m.month).slice(0, 3),
-    Income: m.incomeCents / 100,
-    Expenses: m.expenseCents / 100,
+    Income: m.incomeCents / config.multiplier,
+    Expenses: m.expenseCents / config.multiplier,
   }));
 
   return (
@@ -29,8 +32,8 @@ export function MonthlyChart({ monthly }: { monthly: MonthlyPoint[] }) {
         </defs>
         <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" vertical={false} />
         <XAxis dataKey="name" stroke="var(--text-secondary)" />
-        <YAxis stroke="var(--text-secondary)" tickFormatter={(v) => `$${v}`} />
-        <Tooltip contentStyle={{ backgroundColor: 'var(--bg-panel-solid)', border: '1px solid var(--border-color)', borderRadius: 8 }} />
+        <YAxis stroke="var(--text-secondary)" tickFormatter={(v) => formatCompactAmount(Number(v))} width={64} />
+        <Tooltip formatter={(v: any) => format(Math.round(Number(v) * config.multiplier))} contentStyle={{ backgroundColor: 'var(--bg-panel-solid)', border: '1px solid var(--border-color)', borderRadius: 8 }} />
         <Area type="monotone" dataKey="Income" stroke="var(--accent-success)" fillOpacity={1} fill="url(#colorIncome)" />
         <Area type="monotone" dataKey="Expenses" stroke="var(--accent-danger)" fillOpacity={1} fill="url(#colorExpense)" />
       </AreaChart>

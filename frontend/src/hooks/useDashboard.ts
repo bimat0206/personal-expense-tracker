@@ -39,7 +39,7 @@ export interface AvailableYears {
 
 export interface AnnualDashboardData {
   totals: Totals;
-  monthly: { month: number; incomeCents: number; expenseCents: number; netCents: number }[];
+  monthly: { month: number; incomeCents: number; expenseCents: number; netCents: number; breakdowns: Breakdowns }[];
   breakdowns: Breakdowns;
   topExpenses: TopExpenseItem[];
   isPartialPeriod: boolean;
@@ -106,6 +106,35 @@ export function useMonthlyDashboard(year: number, month: number) {
   return useApiResource<MonthlyDashboardData>(
     () => apiClient.GET('/api/dashboard/monthly', { params: { query: { year, month } } }),
     [year, month],
+  );
+}
+
+export function useMonthlyBreakdownsForYear(year: number) {
+  return useApiResource<Array<{ month: number; breakdowns: Breakdowns }>>(
+    async () => {
+      const responses = await Promise.all(
+        Array.from({ length: 12 }, (_, i) => {
+          const month = i + 1;
+          return apiClient
+            .GET('/api/dashboard/monthly', { params: { query: { year, month } } })
+            .then((result) => ({ month, ...result }));
+        }),
+      );
+      const failed = responses.find((r) => r.error);
+      return {
+        error: failed?.error,
+        data: responses.map((r) => ({
+          month: r.month,
+          breakdowns: (r.data as MonthlyDashboardData | undefined)?.breakdowns ?? {
+            byCategory: [],
+            byIncomeSource: [],
+            byPaymentMethod: [],
+            byTag: [],
+          },
+        })),
+      };
+    },
+    [year],
   );
 }
 

@@ -951,13 +951,45 @@ tr.row-error td {
   min-width: 160px;
 }
 
+.ledger-grid {
+  display: grid;
+  gap: 2rem;
+  align-items: start;
+}
+
+.ledger-grid.single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.ledger-grid.split {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .transaction-table-wrap {
   overflow-x: auto;
 }
 
 .transaction-table {
   width: 100%;
+  min-width: 760px;
   border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.tx-date-col {
+  width: 108px;
+}
+
+.tx-category-col {
+  width: 176px;
+}
+
+.tx-amount-col {
+  width: 138px;
+}
+
+.tx-actions-col {
+  width: 92px;
 }
 
 .transaction-table th {
@@ -973,6 +1005,7 @@ tr.row-error td {
   padding: 1rem;
   border-bottom: 1px solid var(--border-color);
   vertical-align: top;
+  overflow-wrap: anywhere;
 }
 
 .transaction-table tr:last-child td {
@@ -981,6 +1014,7 @@ tr.row-error td {
 
 .transaction-note {
   font-weight: 600;
+  line-height: 1.35;
 }
 
 .transaction-meta {
@@ -988,6 +1022,8 @@ tr.row-error td {
   align-items: center;
   gap: 0.4rem;
   margin-top: 0.2rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .transaction-tags {
@@ -1001,20 +1037,25 @@ tr.row-error td {
   text-align: right;
   font-weight: 700;
   white-space: nowrap;
+  overflow-wrap: normal;
 }
 
 .transaction-actions {
   display: flex;
   gap: 0.25rem;
   justify-content: flex-end;
+  overflow-wrap: normal;
 }
 
 .badge {
   display: inline-block;
+  max-width: 100%;
   padding: 0.25rem 0.7rem;
   border-radius: 999px;
   font-size: 0.8rem;
   font-weight: 600;
+  line-height: 1.25;
+  white-space: normal;
 }
 
 .badge-expense {
@@ -1476,6 +1517,9 @@ tr.row-error td {
   .brand {
     width: 100%;
   }
+  .ledger-grid.split {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 640px) {
@@ -1502,6 +1546,47 @@ tr.row-error td {
   }
   .form-row {
     grid-template-columns: 1fr;
+  }
+  .transaction-table {
+    min-width: 0;
+  }
+  .transaction-table thead {
+    display: none;
+  }
+  .transaction-table,
+  .transaction-table tbody,
+  .transaction-table tr,
+  .transaction-table td {
+    display: block;
+    width: 100%;
+  }
+  .transaction-table tr {
+    padding: 0.8rem;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .transaction-table tr:last-child {
+    border-bottom: none;
+  }
+  .transaction-table td {
+    display: grid;
+    grid-template-columns: 86px minmax(0, 1fr);
+    align-items: start;
+    gap: 0.75rem;
+    padding: 0.45rem 0;
+    border-bottom: none;
+  }
+  .transaction-table td::before {
+    content: attr(data-label);
+    color: var(--text-secondary);
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .transaction-amount,
+  .transaction-actions {
+    justify-content: flex-start;
+    text-align: left;
   }
   .config-table {
     min-width: 0;

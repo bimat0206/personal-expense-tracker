@@ -4,7 +4,7 @@ import { X } from 'lucide-react';
 import { useTaxonomyLookup } from '../../hooks/useTaxonomyLookup';
 import { AmountInput } from '../shared/AmountInput';
 import { DatePicker } from '../shared/DatePicker';
-import { centsToDecimalString, decimalToCents } from '../../utils/currency';
+import { useCurrencyFormatter } from '../../hooks/useCurrencyFormatter';
 import { todayIso } from '../../utils/date';
 
 interface PurchaseModalProps {
@@ -16,7 +16,8 @@ interface PurchaseModalProps {
 
 export function PurchaseModal({ itemName, estimatedCostCents, onClose, onConfirm }: PurchaseModalProps) {
   const { paymentMethods } = useTaxonomyLookup();
-  const [amount, setAmount] = useState(centsToDecimalString(estimatedCostCents));
+  const { parseInput, toDecimalString, loading: currencyLoading } = useCurrencyFormatter();
+  const [amount, setAmount] = useState('');
   const [date, setDate] = useState(todayIso());
   const [paymentMethodId, setPaymentMethodId] = useState<number | undefined>(paymentMethods[0]?.id);
   const [saving, setSaving] = useState(false);
@@ -25,6 +26,10 @@ export function PurchaseModal({ itemName, estimatedCostCents, onClose, onConfirm
   useEffect(() => {
     setPaymentMethodId((current) => current ?? paymentMethods[0]?.id);
   }, [paymentMethods]);
+  useEffect(() => {
+    if (currencyLoading) return;
+    setAmount(toDecimalString(estimatedCostCents));
+  }, [currencyLoading, estimatedCostCents, toDecimalString]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -32,7 +37,7 @@ export function PurchaseModal({ itemName, estimatedCostCents, onClose, onConfirm
       setError('Choose a payment method to complete the purchase.');
       return;
     }
-    const amountCents = decimalToCents(amount);
+    const amountCents = parseInput(amount);
     if (!amountCents) {
       setError('Enter a valid amount.');
       return;

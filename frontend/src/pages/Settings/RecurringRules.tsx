@@ -7,7 +7,7 @@ import { AmountInput } from '../../components/shared/AmountInput';
 import { DatePicker } from '../../components/shared/DatePicker';
 import { LoadingSpinner } from '../../components/shared/LoadingSpinner';
 import { EmptyState } from '../../components/shared/EmptyState';
-import { centsToDisplay, decimalToCents } from '../../utils/currency';
+import { useCurrencyFormatter } from '../../hooks/useCurrencyFormatter';
 import { todayIso } from '../../utils/date';
 import type { components } from '../../../../contracts/generated/types';
 
@@ -18,6 +18,7 @@ export function RecurringRules() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const { categories, incomeSources, paymentMethods, nameFor } = useTaxonomyLookup();
+  const { format } = useCurrencyFormatter();
 
   async function refetch() {
     setLoading(true);
@@ -65,7 +66,7 @@ export function RecurringRules() {
         {rules.map((rule) => (
           <li key={rule.id} className={!rule.active ? 'archived' : ''}>
             <span className="config-item-name">
-              {centsToDisplay(rule.amountCents)} · {rule.frequency} ·{' '}
+              {format(rule.amountCents)} · {rule.frequency} ·{' '}
               {rule.type === 'expense' ? nameFor.category(rule.categoryId!) : nameFor.incomeSource(rule.incomeSourceId!)}
             </span>
             <span className="text-muted">from {rule.startDate}</span>
@@ -90,8 +91,9 @@ interface RuleFormProps {
 }
 
 function RuleForm({ categories, incomeSources, paymentMethods, onSaved, onCancel }: RuleFormProps) {
+  const { parseInput } = useCurrencyFormatter();
   const [type, setType] = useState<'expense' | 'income'>('expense');
-  const [amount, setAmount] = useState('');
+  const [amountValue, setAmountValue] = useState('');
   const [categoryId, setCategoryId] = useState(categories[0]?.id);
   const [incomeSourceId, setIncomeSourceId] = useState(incomeSources[0]?.id);
   const [paymentMethodId, setPaymentMethodId] = useState(paymentMethods[0]?.id);
@@ -111,7 +113,7 @@ function RuleForm({ categories, incomeSources, paymentMethods, onSaved, onCancel
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    const amountCents = decimalToCents(amount);
+    const amountCents = parseInput(amountValue);
     if (!amountCents || !paymentMethodId) {
       setError('Fill in a valid amount and payment method.');
       return;
@@ -140,7 +142,7 @@ function RuleForm({ categories, incomeSources, paymentMethods, onSaved, onCancel
         <button type="button" className={type === 'expense' ? 'active' : ''} onClick={() => setType('expense')}>Expense</button>
         <button type="button" className={type === 'income' ? 'active' : ''} onClick={() => setType('income')}>Income</button>
       </div>
-      <AmountInput value={amount} onChange={setAmount} />
+      <AmountInput value={amountValue} onChange={setAmountValue} />
       {type === 'expense' ? (
         <select className="input" value={categoryId ?? ''} onChange={(e) => setCategoryId(Number(e.target.value))}>
           {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}

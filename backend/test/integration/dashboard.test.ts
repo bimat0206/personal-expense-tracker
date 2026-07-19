@@ -6,12 +6,14 @@ import { buildApp, seedBasics } from '../fixtures/seed';
 describe('Dashboard API', () => {
   let app: Express;
   let category: { id: number };
+  let incomeSource: { id: number };
   let paymentMethod: { id: number };
 
   beforeEach(async () => {
     app = buildApp();
     const basics = await seedBasics(app);
     category = basics.category;
+    incomeSource = basics.incomeSource;
     paymentMethod = basics.paymentMethod;
     await request(app)
       .post('/api/transactions')
@@ -28,6 +30,18 @@ describe('Dashboard API', () => {
     const res = await request(app).get('/api/dashboard/annual').query({ year: 2026 });
     expect(res.body.totals.expenseCents).toBe(2000);
     expect(res.body.topExpenses).toHaveLength(1);
+  });
+
+  it('includes real monthly category and payment-method spending breakdowns', async () => {
+    await request(app)
+      .post('/api/transactions')
+      .send({ type: 'income', date: '2026-03-11', amountCents: 5000, incomeSourceId: incomeSource.id, paymentMethodId: paymentMethod.id });
+
+    const res = await request(app).get('/api/dashboard/annual').query({ year: 2026 });
+    const march = res.body.monthly.find((m: { month: number }) => m.month === 3);
+
+    expect(march.breakdowns.byCategory).toEqual([{ id: category.id, amountCents: 2000 }]);
+    expect(march.breakdowns.byPaymentMethod).toEqual([{ id: paymentMethod.id, amountCents: 2000 }]);
   });
 
   it('comparison against a zero-data year returns null percentages, not an error', async () => {

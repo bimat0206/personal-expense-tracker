@@ -1203,6 +1203,12 @@ paths:
                     type: array
                     items:
                       type: object
+                      required:
+                        - month
+                        - incomeCents
+                        - expenseCents
+                        - netCents
+                        - breakdowns
                       properties:
                         month:
                           type: integer
@@ -1212,6 +1218,53 @@ paths:
                           type: integer
                         netCents:
                           type: integer
+                        breakdowns:
+                          type: object
+                          required:
+                            - byCategory
+                            - byIncomeSource
+                            - byPaymentMethod
+                            - byTag
+                          properties:
+                            byCategory:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  id:
+                                    type: integer
+                                  amountCents:
+                                    type: integer
+                            byIncomeSource:
+                              type: array
+                              items:
+                                type: object
+                                required:
+                                  - id
+                                  - amountCents
+                                properties:
+                                  id:
+                                    type: integer
+                                  amountCents:
+                                    type: integer
+                            byPaymentMethod:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  id:
+                                    type: integer
+                                  amountCents:
+                                    type: integer
+                            byTag:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  id:
+                                    type: integer
+                                  amountCents:
+                                    type: integer
                   breakdowns:
                     type: object
                     properties:

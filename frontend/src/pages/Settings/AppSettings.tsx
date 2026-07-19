@@ -3,6 +3,7 @@ import { Download, Upload } from 'lucide-react';
 import { useAppSettings } from '../../hooks/useSettings';
 import { apiClient } from '../../api/client';
 import { LoadingSpinner } from '../../components/shared/LoadingSpinner';
+import { CURRENCIES, centsToDisplay } from '../../utils/currency';
 
 export function AppSettings() {
   const { settings, loading, update } = useAppSettings();
@@ -61,7 +62,13 @@ export function AppSettings() {
       <h3>App Settings</h3>
       <label>
         Currency code
-        <input className="input" value={currencyCode} onChange={(e) => setCurrencyCode(e.target.value.toUpperCase())} maxLength={3} />
+        <select className="input" value={currencyCode} onChange={(e) => setCurrencyCode(e.target.value)}>
+          {Object.values(CURRENCIES).map((c) => (
+            <option key={c.code} value={c.code}>
+              {c.code} - {c.symbol} (e.g., {centsToDisplay(1000 * c.multiplier, c.code)})
+            </option>
+          ))}
+        </select>
       </label>
       <label>
         Top Expenses count (1–50)

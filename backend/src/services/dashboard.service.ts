@@ -74,7 +74,10 @@ function breakdowns(rows: TxnRow[]) {
       rows.filter((r) => r.type === 'income'),
       (r) => r.incomeSourceId,
     ),
-    byPaymentMethod: breakdownBy(rows, (r) => r.paymentMethodId),
+    byPaymentMethod: breakdownBy(
+      rows.filter((r) => r.type === 'expense'),
+      (r) => r.paymentMethodId,
+    ),
     byTag: breakdownByTag(rows),
   };
 }
@@ -107,7 +110,7 @@ export function getAnnual(year: number) {
   const monthly = Array.from({ length: 12 }, (_, i) => {
     const month = i + 1;
     const monthRows = rows.filter((r) => Number(r.date.slice(5, 7)) === month);
-    return { month, ...totalsOf(monthRows) };
+    return { month, ...totalsOf(monthRows), breakdowns: breakdowns(monthRows) };
   });
   return {
     totals: totalsOf(rows),

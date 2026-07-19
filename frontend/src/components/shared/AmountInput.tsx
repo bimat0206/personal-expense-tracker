@@ -1,24 +1,26 @@
+import { useCurrencyFormatter } from '../../hooks/useCurrencyFormatter';
+import { formatAmountInput } from '../../utils/currency';
+
 interface AmountInputProps {
   value: string;
   onChange: (value: string) => void;
-  currencyCode?: string;
   placeholder?: string;
 }
 
-const SYMBOLS: Record<string, string> = { USD: '$', EUR: '€', GBP: '£' };
+export function AmountInput({ value, onChange, placeholder }: AmountInputProps) {
+  const { config, currencyCode, loading } = useCurrencyFormatter();
+  const actualPlaceholder = placeholder || (config.multiplier === 1 ? '0' : '0.00');
+  const displayValue = formatAmountInput(value, currencyCode);
 
-export function AmountInput({ value, onChange, currencyCode = 'USD', placeholder = '0.00' }: AmountInputProps) {
   return (
     <div className="amount-input">
-      <span className="amount-input-symbol">{SYMBOLS[currencyCode] ?? currencyCode}</span>
+      <span className="amount-input-symbol">{loading ? '' : config.symbol}</span>
       <input
-        type="number"
-        inputMode="decimal"
-        min="0.01"
-        step="0.01"
-        value={value}
-        placeholder={placeholder}
-        onChange={(e) => onChange(e.target.value)}
+        type="text"
+        inputMode={config.multiplier === 1 ? 'numeric' : 'decimal'}
+        value={displayValue}
+        placeholder={actualPlaceholder}
+        onChange={(e) => onChange(formatAmountInput(e.target.value, currencyCode))}
       />
     </div>
   );
