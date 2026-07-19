@@ -29,7 +29,7 @@ export function TopExpenses({ items, nameForCategory, initialVisible = 5 }: TopE
       <div className="breakdown-header">
         <h4>Top Expenses</h4>
         {items.length > 0 && (
-          <span className="breakdown-total text-muted" style={{ fontSize: '0.85rem' }}>
+          <span className="breakdown-total text-muted">
             {items.length} item{items.length !== 1 ? 's' : ''}
           </span>
         )}

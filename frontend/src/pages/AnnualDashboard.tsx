@@ -61,28 +61,55 @@ export function AnnualDashboard() {
           </section>
           {data.isPartialPeriod && <p className="text-muted">Showing year-to-date figures for {year}.</p>}
 
-          <div className="glass-panel chart-panel">
-            <h3>Cash Flow by Month</h3>
-            <div className="chart-container">
-              <MonthlyChart monthly={data.monthly} />
+          <section className="dashboard-primary-grid">
+            <div className="glass-panel chart-panel">
+              <div className="chart-panel-header">
+                <div>
+                  <p className="section-kicker">Cash flow</p>
+                  <h3>Income, expenses & net by month</h3>
+                  <p className="chart-subtitle">Compare money in and out while the line tracks monthly savings.</p>
+                </div>
+              </div>
+              <div className="chart-container">
+                <MonthlyChart monthly={data.monthly} />
+              </div>
+            </div>
+            <TopExpenses items={data.topExpenses} nameForCategory={nameFor.category} />
+          </section>
+
+          <div className="section-heading">
+            <div>
+              <p className="section-kicker">Composition</p>
+              <h3>Where the year went</h3>
+              <p className="text-muted">Ranked totals across your key dimensions.</p>
             </div>
           </div>
+          <section className="dashboard-grid">
+            <BreakdownTable title="Spending by category" items={data.breakdowns.byCategory} nameFor={nameFor.category} />
+            <BreakdownTable title="Income by source" items={data.breakdowns.byIncomeSource} nameFor={nameFor.incomeSource} />
+            <BreakdownTable title="Payment methods" items={data.breakdowns.byPaymentMethod} nameFor={nameFor.paymentMethod} />
+            <BreakdownTable title="Tags" items={data.breakdowns.byTag} nameFor={nameFor.tag} />
+          </section>
 
-          <div className="dashboard-grid">
-            <BreakdownTable title="By Category" items={data.breakdowns.byCategory} nameFor={nameFor.category} />
-            <BreakdownTable title="By Income Source" items={data.breakdowns.byIncomeSource} nameFor={nameFor.incomeSource} />
-            <BreakdownTable title="By Payment Method" items={data.breakdowns.byPaymentMethod} nameFor={nameFor.paymentMethod} />
-            <BreakdownTable title="By Tag" items={data.breakdowns.byTag} nameFor={nameFor.tag} />
+          <div className="section-heading">
+            <div>
+              <p className="section-kicker">Monthly mix</p>
+              <h3>How your patterns changed</h3>
+              <p className="text-muted">Track category, source, and payment-method shifts through the year.</p>
+            </div>
           </div>
-
           <MonthlyBreakdownCharts monthly={monthlyForBreakdownCharts} />
-
-          <TopExpenses items={data.topExpenses} nameForCategory={nameFor.category} />
 
           {years && years.years.length > 1 && (
             <div className="glass-panel chart-panel">
-              <h3>Multi-Year Trend</h3>
-              <div className="chart-container">
+              <div className="chart-panel-header">
+                <div>
+                  <p className="section-kicker">Long view</p>
+                  <h3>Multi-year trend</h3>
+                  <p className="chart-subtitle">See whether income, spending, and savings are moving in the right direction.</p>
+                </div>
+              </div>
+              <div className="chart-container compact">
                 <MultiYearTrend years={years.years} />
               </div>
             </div>

@@ -54,16 +54,26 @@ export function WishList() {
 
   return (
     <div className="page-stack">
-      <div className="page-header">
-        <h2>Wish List</h2>
-        <button className="btn btn-primary" onClick={() => setShowForm((s) => !s)}>
-          <Plus size={18} /> Add Item
-        </button>
+      <div className="workspace-header">
+        <div>
+          <p className="eyebrow">Purchase planning</p>
+          <h2>Wish List</h2>
+          <p className="text-muted">Plan purchases before they hit your ledger and monthly cash flow.</p>
+        </div>
+        <div className="header-actions">
+          <MonthYearSwitcher year={year} month={month} onChange={goTo} />
+          <button className="btn btn-primary" onClick={() => setShowForm((s) => !s)}>
+            <Plus size={18} /> Add Item
+          </button>
+        </div>
       </div>
 
-      <div className="page-header">
-        <MonthYearSwitcher year={year} month={month} onChange={goTo} />
-        <span className="text-muted">Planned this month: {format(estimatedTotalCents)}</span>
+      <div className="wishlist-hero">
+        <div>
+          <p className="wishlist-total-label">Planned this month</p>
+          <p className="wishlist-total-value">{format(estimatedTotalCents)}</p>
+        </div>
+        <p className="text-muted">Wish List totals stay separate from recorded expenses until you confirm a purchase.</p>
       </div>
 
       {showForm && (

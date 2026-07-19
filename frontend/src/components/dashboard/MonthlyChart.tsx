@@ -1,4 +1,14 @@
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import {
+  Bar,
+  CartesianGrid,
+  ComposedChart,
+  Legend,
+  Line,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 import { monthName } from '../../utils/date';
 import { useCurrencyFormatter } from '../../hooks/useCurrencyFormatter';
 
@@ -8,35 +18,42 @@ interface MonthlyPoint {
   expenseCents: number;
 }
 
+function CashFlowTooltip({ active, payload, label, format, multiplier }: any) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="chart-tooltip">
+      <p className="chart-tooltip-label">{label}</p>
+      {payload.map((entry: any) => (
+        <div className="chart-tooltip-row" key={entry.dataKey}>
+          <span><span className="chart-tooltip-dot" style={{ background: entry.color }} />{entry.name}</span>
+          <strong>{format(Math.round(Number(entry.value) * multiplier))}</strong>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function MonthlyChart({ monthly }: { monthly: MonthlyPoint[] }) {
   const { config, format, formatCompactAmount } = useCurrencyFormatter();
-  
   const data = monthly.map((m) => ({
     name: monthName(m.month).slice(0, 3),
     Income: m.incomeCents / config.multiplier,
     Expenses: m.expenseCents / config.multiplier,
+    Net: (m.incomeCents - m.expenseCents) / config.multiplier,
   }));
 
   return (
     <ResponsiveContainer width="100%" height="100%">
-      <AreaChart data={data} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-        <defs>
-          <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="var(--accent-success)" stopOpacity={0.35} />
-            <stop offset="95%" stopColor="var(--accent-success)" stopOpacity={0} />
-          </linearGradient>
-          <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="var(--accent-danger)" stopOpacity={0.35} />
-            <stop offset="95%" stopColor="var(--accent-danger)" stopOpacity={0} />
-          </linearGradient>
-        </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" vertical={false} />
-        <XAxis dataKey="name" stroke="var(--text-secondary)" />
-        <YAxis stroke="var(--text-secondary)" tickFormatter={(v) => formatCompactAmount(Number(v))} width={64} />
-        <Tooltip formatter={(v: any) => format(Math.round(Number(v) * config.multiplier))} contentStyle={{ backgroundColor: 'var(--bg-panel-solid)', border: '1px solid var(--border-color)', borderRadius: 8 }} />
-        <Area type="monotone" dataKey="Income" stroke="var(--accent-success)" fillOpacity={1} fill="url(#colorIncome)" />
-        <Area type="monotone" dataKey="Expenses" stroke="var(--accent-danger)" fillOpacity={1} fill="url(#colorExpense)" />
-      </AreaChart>
+      <ComposedChart data={data} margin={{ top: 12, right: 12, left: 0, bottom: 0 }} barGap={3}>
+        <CartesianGrid stroke="var(--chart-grid)" vertical={false} />
+        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-muted)', fontSize: 11 }} dy={8} />
+        <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--text-muted)', fontSize: 11 }} tickFormatter={(value) => formatCompactAmount(Number(value))} width={60} />
+        <Tooltip content={<CashFlowTooltip format={format} multiplier={config.multiplier} />} cursor={{ fill: 'var(--bg-subtle)', opacity: 0.7 }} />
+        <Legend iconType="circle" iconSize={7} wrapperStyle={{ fontSize: '12px', paddingTop: '18px' }} />
+        <Bar dataKey="Income" fill="var(--accent-success)" radius={[4, 4, 0, 0]} maxBarSize={24} />
+        <Bar dataKey="Expenses" fill="var(--accent-danger)" radius={[4, 4, 0, 0]} maxBarSize={24} />
+        <Line type="monotone" dataKey="Net" stroke="var(--accent-secondary)" strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} />
+      </ComposedChart>
     </ResponsiveContainer>
   );
 }

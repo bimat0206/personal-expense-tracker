@@ -1,4 +1,4 @@
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import type { paths } from '../../../../contracts/generated/types';
 import { monthName } from '../../utils/date';
 import { useTaxonomyLookup } from '../../hooks/useTaxonomyLookup';
@@ -80,14 +80,14 @@ export function MonthlyBreakdownCharts({ monthly }: MonthlyBreakdownChartsProps)
   });
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem', marginTop: '2rem' }}>
+    <div className="chart-stack">
       
       {catKeys.length > 0 && (
         <div className="glass-panel chart-panel">
-          <h3>Expenses by Category (Monthly)</h3>
-          <div className="chart-container" style={{ height: '300px', padding: '1rem 0' }}>
+          <div className="chart-panel-header"><div><h3>Category trend</h3><p className="chart-subtitle">Monthly expense composition</p></div></div>
+          <div className="chart-container compact">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+              <BarChart data={data} margin={{ top: 10, right: 12, left: 0, bottom: 0 }} barCategoryGap="20%">
                 <defs>
                   {catKeys.map(id => {
                     const color = colorFor.category(id) || getPaletteColor(id);
@@ -107,10 +107,10 @@ export function MonthlyBreakdownCharts({ monthly }: MonthlyBreakdownChartsProps)
                 {catKeys.map(id => {
                   const color = colorFor.category(id) || getPaletteColor(id);
                   return (
-                    <Area key={id} type="monotone" dataKey={`cat_${id}`} stackId="a" stroke={color} fillOpacity={1} fill={`url(#colorCat${id})`} />
+                    <Bar key={id} dataKey={`cat_${id}`} stackId="category" fill={color} maxBarSize={30} />
                   );
                 })}
-              </AreaChart>
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
@@ -118,10 +118,10 @@ export function MonthlyBreakdownCharts({ monthly }: MonthlyBreakdownChartsProps)
 
       {srcKeys.length > 0 && (
         <div className="glass-panel chart-panel">
-          <h3>Income by Source (Monthly)</h3>
-          <div className="chart-container" style={{ height: '300px', padding: '1rem 0' }}>
+          <div className="chart-panel-header"><div><h3>Income-source trend</h3><p className="chart-subtitle">Monthly income composition</p></div></div>
+          <div className="chart-container compact">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+              <BarChart data={data} margin={{ top: 10, right: 12, left: 0, bottom: 0 }} barCategoryGap="20%">
                 <defs>
                   {srcKeys.map(id => {
                     const color = colorFor.incomeSource(id) || getPaletteColor(id);
@@ -141,10 +141,10 @@ export function MonthlyBreakdownCharts({ monthly }: MonthlyBreakdownChartsProps)
                 {srcKeys.map(id => {
                   const color = colorFor.incomeSource(id) || getPaletteColor(id);
                   return (
-                    <Area key={id} type="monotone" dataKey={`src_${id}`} stackId="a" stroke={color} fillOpacity={1} fill={`url(#colorSrc${id})`} />
+                    <Bar key={id} dataKey={`src_${id}`} stackId="source" fill={color} maxBarSize={30} />
                   );
                 })}
-              </AreaChart>
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
@@ -152,10 +152,10 @@ export function MonthlyBreakdownCharts({ monthly }: MonthlyBreakdownChartsProps)
 
       {pmKeys.length > 0 && (
         <div className="glass-panel chart-panel">
-          <h3>Spending by Payment Method (Monthly)</h3>
-          <div className="chart-container" style={{ height: '300px', padding: '1rem 0' }}>
+          <div className="chart-panel-header"><div><h3>Payment-method trend</h3><p className="chart-subtitle">How you paid each month</p></div></div>
+          <div className="chart-container compact">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+              <BarChart data={data} margin={{ top: 10, right: 12, left: 0, bottom: 0 }} barCategoryGap="20%">
                 <defs>
                   {pmKeys.map(id => {
                     const color = getPaletteColor(id);
@@ -175,10 +175,10 @@ export function MonthlyBreakdownCharts({ monthly }: MonthlyBreakdownChartsProps)
                 {pmKeys.map(id => {
                   const color = getPaletteColor(id);
                   return (
-                    <Area key={id} type="monotone" dataKey={`pm_${id}`} stackId="a" stroke={color} fillOpacity={1} fill={`url(#colorPm${id})`} />
+                    <Bar key={id} dataKey={`pm_${id}`} stackId="payment" fill={color} maxBarSize={30} />
                   );
                 })}
-              </AreaChart>
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
