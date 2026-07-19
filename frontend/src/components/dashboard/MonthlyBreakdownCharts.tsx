@@ -5,115 +5,157 @@ import { useTaxonomyLookup } from '../../hooks/useTaxonomyLookup';
 import { useCurrencyFormatter } from '../../hooks/useCurrencyFormatter';
 
 type MonthlyData = paths['/api/dashboard/annual']['get']['responses']['200']['content']['application/json']['monthly'];
+type BreakdownKey = 'byCategory' | 'byPaymentMethod';
 
 const PALETTE = [
-  '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
-  '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1'
+  '#7c3aed', '#2563eb', '#0891b2', '#0d9488', '#16a34a', '#65a30d',
+  '#ca8a04', '#ea580c', '#dc2626', '#db2777', '#9333ea', '#4f46e5',
 ];
-
-function getPaletteColor(id: number) {
-  return PALETTE[id % PALETTE.length];
-}
 
 const tooltipStyle = {
   backgroundColor: 'var(--bg-panel-solid)',
   border: '1px solid var(--border-color)',
-  borderRadius: 8,
-  fontSize: '0.85rem',
+  borderRadius: 10,
+  boxShadow: 'var(--shadow-md)',
+  fontSize: '0.8rem',
 };
-
-
 
 interface MonthlyBreakdownChartsProps {
   monthly: MonthlyData;
+}
+
+interface VerticalTrendProps {
+  title: string;
+  subtitle: string;
+  ids: number[];
+  monthly: MonthlyData;
+  breakdownKey: BreakdownKey;
+  nameFor: (id: number) => string;
+  multiplier: number;
+  format: (value: number) => string;
+  formatCompactAmount: (value: number) => string;
+}
+
+function VerticalTrendChart({
+  title,
+  subtitle,
+  ids,
+  monthly,
+  breakdownKey,
+  nameFor,
+  multiplier,
+  format,
+  formatCompactAmount,
+}: VerticalTrendProps) {
+  const monthSeries = (monthly || []).map((month) => ({
+    key: `month_${month.month}`,
+    label: monthName(month.month!).slice(0, 3),
+    month: month.month!,
+  }));
+
+  const rows = ids
+    .map((id) => {
+      const row: Record<string, string | number> = { id, name: nameFor(id), total: 0 };
+      monthSeries.forEach(({ key, month }) => {
+        const monthlyPoint = monthly.find((item) => item.month === month);
+        const amount = monthlyPoint?.breakdowns?.[breakdownKey]?.find((item) => item.id === id)?.amountCents ?? 0;
+        row[key] = amount / multiplier;
+        row.total = Number(row.total) + amount;
+      });
+      return row;
+    })
+    .sort((a, b) => Number(b.total) - Number(a.total));
+
+  const chartHeight = Math.max(250, rows.length * 44 + 72);
+  const labelWidth = Math.min(320, Math.max(150, ...rows.map((row) => String(row.name).length * 7.2 + 24)));
+
+  return (
+    <div className="glass-panel chart-panel">
+      <div className="chart-panel-header">
+        <div>
+          <h3>{title}</h3>
+          <p className="chart-subtitle">{subtitle}</p>
+        </div>
+        <span className="chart-count">{rows.length} items</span>
+      </div>
+      <div className="vertical-chart-scroll">
+        <div className="vertical-chart-canvas" style={{ height: chartHeight }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart layout="vertical" data={rows} margin={{ top: 8, right: 18, left: 8, bottom: 8 }} barCategoryGap="22%">
+              <CartesianGrid stroke="var(--chart-grid)" horizontal={false} />
+              <XAxis
+                type="number"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
+                tickFormatter={(value) => formatCompactAmount(Number(value))}
+              />
+              <YAxis
+                type="category"
+                dataKey="name"
+                axisLine={false}
+                tickLine={false}
+                interval={0}
+                width={labelWidth}
+                tick={{ fill: 'var(--text-secondary)', fontSize: 12 }}
+              />
+              <Tooltip
+                contentStyle={tooltipStyle}
+                formatter={(value, label) => [format(Math.round(Number(value) * multiplier)), label]}
+              />
+              <Legend iconType="circle" iconSize={7} wrapperStyle={{ fontSize: '11px', paddingTop: '14px' }} />
+              {monthSeries.map(({ key, label }, index) => (
+                <Bar key={key} dataKey={key} name={label} stackId="months" fill={PALETTE[index % PALETTE.length]} maxBarSize={25} />
+              ))}
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function MonthlyBreakdownCharts({ monthly }: MonthlyBreakdownChartsProps) {
   const { nameFor, colorFor } = useTaxonomyLookup();
   const { config, format, formatCompactAmount } = useCurrencyFormatter();
 
-  // Extract unique IDs across all months for the keys
   const catIds = new Set<number>();
   const srcIds = new Set<number>();
   const pmIds = new Set<number>();
 
-  (monthly || []).forEach(m => {
-    (m.breakdowns?.byCategory || []).forEach(b => {
-      if (b.id != null) catIds.add(b.id);
-    });
-    (m.breakdowns?.byIncomeSource || []).forEach(b => {
-      if (b.id != null) srcIds.add(b.id);
-    });
-    (m.breakdowns?.byPaymentMethod || []).forEach(b => {
-      if (b.id != null) pmIds.add(b.id);
-    });
+  (monthly || []).forEach((month) => {
+    (month.breakdowns?.byCategory || []).forEach((item) => item.id != null && catIds.add(item.id));
+    (month.breakdowns?.byIncomeSource || []).forEach((item) => item.id != null && srcIds.add(item.id));
+    (month.breakdowns?.byPaymentMethod || []).forEach((item) => item.id != null && pmIds.add(item.id));
   });
 
   const catKeys = Array.from(catIds);
   const srcKeys = Array.from(srcIds);
   const pmKeys = Array.from(pmIds);
 
-  const data = (monthly || []).map(m => {
-    const row: any = { name: monthName(m.month!).slice(0, 3) };
-    catKeys.forEach(id => {
-      row[`cat_${id}`] = 0;
-    });
-    srcKeys.forEach(id => {
-      row[`src_${id}`] = 0;
-    });
-    pmKeys.forEach(id => {
-      row[`pm_${id}`] = 0;
-    });
-    (m.breakdowns?.byCategory || []).forEach(b => {
-      if (b.id == null) return;
-      row[`cat_${b.id}`] = (b.amountCents || 0) / config.multiplier;
-    });
-    (m.breakdowns?.byIncomeSource || []).forEach(b => {
-      if (b.id == null) return;
-      row[`src_${b.id}`] = (b.amountCents || 0) / config.multiplier;
-    });
-    (m.breakdowns?.byPaymentMethod || []).forEach(b => {
-      if (b.id == null) return;
-      row[`pm_${b.id}`] = (b.amountCents || 0) / config.multiplier;
+  const timelineData = (monthly || []).map((month) => {
+    const row: Record<string, string | number> = { name: monthName(month.month!).slice(0, 3) };
+    srcKeys.forEach((id) => { row[`src_${id}`] = 0; });
+    (month.breakdowns?.byIncomeSource || []).forEach((item) => {
+      if (item.id != null) row[`src_${item.id}`] = (item.amountCents || 0) / config.multiplier;
     });
     return row;
   });
 
   return (
     <div className="chart-stack">
-      
       {catKeys.length > 0 && (
-        <div className="glass-panel chart-panel">
-          <div className="chart-panel-header"><div><h3>Category trend</h3><p className="chart-subtitle">Monthly expense composition</p></div></div>
-          <div className="chart-container compact">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data} margin={{ top: 10, right: 12, left: 0, bottom: 0 }} barCategoryGap="20%">
-                <defs>
-                  {catKeys.map(id => {
-                    const color = colorFor.category(id) || getPaletteColor(id);
-                    return (
-                      <linearGradient key={id} id={`colorCat${id}`} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={color} stopOpacity={0.35} />
-                        <stop offset="95%" stopColor={color} stopOpacity={0} />
-                      </linearGradient>
-                    );
-                  })}
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" vertical={false} />
-                <XAxis dataKey="name" stroke="var(--text-secondary)" tick={{ fontSize: 12 }} />
-                <YAxis stroke="var(--text-secondary)" tickFormatter={(v) => formatCompactAmount(Number(v))} tick={{ fontSize: 11 }} width={64} />
-                <Tooltip contentStyle={tooltipStyle} formatter={(v: any, name: any) => [format(Math.round(Number(v) * config.multiplier)), nameFor.category(Number(String(name).replace('cat_', '')))]} />
-                <Legend wrapperStyle={{ fontSize: '0.8rem' }} formatter={(v) => nameFor.category(Number(String(v).replace('cat_', '')))} />
-                {catKeys.map(id => {
-                  const color = colorFor.category(id) || getPaletteColor(id);
-                  return (
-                    <Bar key={id} dataKey={`cat_${id}`} stackId="category" fill={color} maxBarSize={30} />
-                  );
-                })}
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+        <VerticalTrendChart
+          title="Category trend"
+          subtitle="Categories listed vertically; each bar is split by month. Scroll to see the full list."
+          ids={catKeys}
+          monthly={monthly}
+          breakdownKey="byCategory"
+          nameFor={nameFor.category}
+          multiplier={config.multiplier}
+          format={format}
+          formatCompactAmount={formatCompactAmount}
+        />
       )}
 
       {srcKeys.length > 0 && (
@@ -121,29 +163,15 @@ export function MonthlyBreakdownCharts({ monthly }: MonthlyBreakdownChartsProps)
           <div className="chart-panel-header"><div><h3>Income-source trend</h3><p className="chart-subtitle">Monthly income composition</p></div></div>
           <div className="chart-container compact">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data} margin={{ top: 10, right: 12, left: 0, bottom: 0 }} barCategoryGap="20%">
-                <defs>
-                  {srcKeys.map(id => {
-                    const color = colorFor.incomeSource(id) || getPaletteColor(id);
-                    return (
-                      <linearGradient key={id} id={`colorSrc${id}`} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={color} stopOpacity={0.35} />
-                        <stop offset="95%" stopColor={color} stopOpacity={0} />
-                      </linearGradient>
-                    );
-                  })}
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" vertical={false} />
-                <XAxis dataKey="name" stroke="var(--text-secondary)" tick={{ fontSize: 12 }} />
-                <YAxis stroke="var(--text-secondary)" tickFormatter={(v) => formatCompactAmount(Number(v))} tick={{ fontSize: 11 }} width={64} />
-                <Tooltip contentStyle={tooltipStyle} formatter={(v: any, name: any) => [format(Math.round(Number(v) * config.multiplier)), nameFor.incomeSource(Number(String(name).replace('src_', '')))]} />
-                <Legend wrapperStyle={{ fontSize: '0.8rem' }} formatter={(v) => nameFor.incomeSource(Number(String(v).replace('src_', '')))} />
-                {srcKeys.map(id => {
-                  const color = colorFor.incomeSource(id) || getPaletteColor(id);
-                  return (
-                    <Bar key={id} dataKey={`src_${id}`} stackId="source" fill={color} maxBarSize={30} />
-                  );
-                })}
+              <BarChart data={timelineData} margin={{ top: 10, right: 12, left: 0, bottom: 0 }} barCategoryGap="20%">
+                <CartesianGrid stroke="var(--chart-grid)" vertical={false} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-muted)', fontSize: 11 }} />
+                <YAxis axisLine={false} tickLine={false} tickFormatter={(value) => formatCompactAmount(Number(value))} tick={{ fill: 'var(--text-muted)', fontSize: 11 }} width={64} />
+                <Tooltip contentStyle={tooltipStyle} formatter={(value, name) => [format(Math.round(Number(value) * config.multiplier)), nameFor.incomeSource(Number(String(name).replace('src_', '')))]} />
+                <Legend iconType="circle" iconSize={7} wrapperStyle={{ fontSize: '11px' }} formatter={(value) => nameFor.incomeSource(Number(String(value).replace('src_', '')))} />
+                {srcKeys.map((id) => (
+                  <Bar key={id} dataKey={`src_${id}`} stackId="source" fill={colorFor.incomeSource(id) || PALETTE[id % PALETTE.length]} maxBarSize={30} />
+                ))}
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -151,39 +179,18 @@ export function MonthlyBreakdownCharts({ monthly }: MonthlyBreakdownChartsProps)
       )}
 
       {pmKeys.length > 0 && (
-        <div className="glass-panel chart-panel">
-          <div className="chart-panel-header"><div><h3>Payment-method trend</h3><p className="chart-subtitle">How you paid each month</p></div></div>
-          <div className="chart-container compact">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data} margin={{ top: 10, right: 12, left: 0, bottom: 0 }} barCategoryGap="20%">
-                <defs>
-                  {pmKeys.map(id => {
-                    const color = getPaletteColor(id);
-                    return (
-                      <linearGradient key={id} id={`colorPm${id}`} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={color} stopOpacity={0.35} />
-                        <stop offset="95%" stopColor={color} stopOpacity={0} />
-                      </linearGradient>
-                    );
-                  })}
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" vertical={false} />
-                <XAxis dataKey="name" stroke="var(--text-secondary)" tick={{ fontSize: 12 }} />
-                <YAxis stroke="var(--text-secondary)" tickFormatter={(v) => formatCompactAmount(Number(v))} tick={{ fontSize: 11 }} width={64} />
-                <Tooltip contentStyle={tooltipStyle} formatter={(v: any, name: any) => [format(Math.round(Number(v) * config.multiplier)), nameFor.paymentMethod(Number(String(name).replace('pm_', '')))]} />
-                <Legend wrapperStyle={{ fontSize: '0.8rem' }} formatter={(v) => nameFor.paymentMethod(Number(String(v).replace('pm_', '')))} />
-                {pmKeys.map(id => {
-                  const color = getPaletteColor(id);
-                  return (
-                    <Bar key={id} dataKey={`pm_${id}`} stackId="payment" fill={color} maxBarSize={30} />
-                  );
-                })}
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+        <VerticalTrendChart
+          title="Payment-method trend"
+          subtitle="Payment methods listed vertically; each bar is split by month."
+          ids={pmKeys}
+          monthly={monthly}
+          breakdownKey="byPaymentMethod"
+          nameFor={nameFor.paymentMethod}
+          multiplier={config.multiplier}
+          format={format}
+          formatCompactAmount={formatCompactAmount}
+        />
       )}
-
     </div>
   );
 }
