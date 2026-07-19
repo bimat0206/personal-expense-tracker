@@ -41,8 +41,8 @@ export function TransactionList({ items, onEdit, onDelete, ...names }: Transacti
       {/* Expenses Section */}
       {hasExpenses && (
       <section>
-        <div className="section-heading" style={{ marginBottom: '1rem' }}>
-          <h4>Expenses <span className="tx-tab-badge" style={{ marginLeft: '0.5rem' }}>{expenses.length}</span></h4>
+        <div className="section-heading ledger-group-heading">
+          <h4>Expenses <span className="tx-tab-badge">{expenses.length}</span></h4>
         </div>
         <div className="glass-panel transaction-table-wrap">
           <table className="transaction-table">
@@ -73,7 +73,7 @@ export function TransactionList({ items, onEdit, onDelete, ...names }: Transacti
             <span className="tx-subtotal-count">
               {expenses.length} {expenses.length === 1 ? 'expense' : 'expenses'}
             </span>
-            <span className="tx-subtotal-amount" style={{ color: 'var(--accent-danger)' }}>
+            <span className="tx-subtotal-amount tone-expense">
               Total: {format(totalExpenseAmount)}
             </span>
           </div>
@@ -84,8 +84,8 @@ export function TransactionList({ items, onEdit, onDelete, ...names }: Transacti
       {/* Income Section */}
       {hasIncomes && (
       <section>
-        <div className="section-heading" style={{ marginBottom: '1rem' }}>
-          <h4>Income <span className="tx-tab-badge" style={{ marginLeft: '0.5rem' }}>{incomes.length}</span></h4>
+        <div className="section-heading ledger-group-heading">
+          <h4>Income <span className="tx-tab-badge">{incomes.length}</span></h4>
         </div>
         <div className="glass-panel transaction-table-wrap">
           <table className="transaction-table">
@@ -125,7 +125,4 @@ export function TransactionList({ items, onEdit, onDelete, ...names }: Transacti
       )}
     </div>
   );
-}
-}
-);
 }
