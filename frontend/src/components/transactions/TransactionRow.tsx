@@ -49,16 +49,18 @@ export function TransactionRow({
       </td>
       <td data-label="Amount" className={`transaction-amount tone-${t.type}`}>{formatSigned(t.amountCents, t.type)}</td>
       <td data-label="Actions" className="transaction-actions">
-        {onEdit && (
-          <button type="button" className="icon-btn" aria-label="Edit" onClick={onEdit}>
-            <Pencil size={16} />
-          </button>
-        )}
-        {onDelete && (
-          <button type="button" className="icon-btn" aria-label="Delete" onClick={onDelete}>
-            <Trash2 size={16} />
-          </button>
-        )}
+        <div className="transaction-actions-inner">
+          {onEdit && (
+            <button type="button" className="icon-btn" aria-label="Edit" onClick={onEdit}>
+              <Pencil size={16} />
+            </button>
+          )}
+          {onDelete && (
+            <button type="button" className="icon-btn" aria-label="Delete" onClick={onDelete}>
+              <Trash2 size={16} />
+            </button>
+          )}
+        </div>
       </td>
     </tr>
   );
